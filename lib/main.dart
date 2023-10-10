@@ -3,7 +3,10 @@ import 'package:camera/camera.dart';
 import 'package:location/location.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'dart:io';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -117,7 +120,7 @@ void _uploadToFirebase(XFile file, LocationData? locationData) async {
   final UploadTask uploadTask = storageRef.putFile(File(file.path)); // Firebase Storageに写真をアップロード
   await uploadTask.whenComplete(() async {
     final String photoURL = await storageRef.getDownloadURL(); // アップロードが完了したら写真のダウンロードURLを取得
-
+    print(photoURL);
     final CollectionReference photos = FirebaseFirestore.instance.collection('photos');
     await photos.add({
       'url': photoURL, // Firestoreに写真のURLを保存

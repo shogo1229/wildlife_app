@@ -9,12 +9,15 @@ import 'dart:io';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras(); // 使用可能なカメラのリストを取得
-  final firstCamera = cameras.first; // 最初のカメラを選択
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  final cameras = await availableCameras();
+  final firstCamera = cameras.first;
 
   runApp(
     MaterialApp(
-      home: CameraApp(camera: firstCamera), // アプリを起動
+      home: CameraApp(camera: firstCamera),
     ),
   );
 }
@@ -32,27 +35,26 @@ class CameraApp extends StatefulWidget {
 }
 
 class _CameraAppState extends State<CameraApp> {
-  late CameraController _controller; // カメラコントローラー
-  LocationData? _locationData; // 緯度と経度を格納する変数
+  late CameraController _controller;
+  LocationData? _locationData;
   bool _isPhotoPreviewVisible = false;
   XFile? _capturedPhoto;
 
   @override
   void initState() {
     super.initState();
-    _controller = CameraController(
-        widget.camera, ResolutionPreset.medium); // カメラコントローラーを初期化
+    _controller = CameraController(widget.camera, ResolutionPreset.medium);
     _controller.initialize().then((_) {
       if (!mounted) {
         return;
       }
-      setState(() {}); // カメラが初期化されたらUIを更新
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // カメラコントローラーを破棄
+    _controller.dispose();
     super.dispose();
   }
 
@@ -68,8 +70,9 @@ class _CameraAppState extends State<CameraApp> {
           });
         },
         onSave: () {
-          _savePhoto(); // 写真を保存する処理を実装
+          _savePhoto();
         },
+        locationData: _locationData, // Add locationData parameter
       );
     }
 
@@ -133,8 +136,11 @@ class _CameraAppState extends State<CameraApp> {
 
   void _savePhoto() async {
     final FirebaseStorage storage = FirebaseStorage.instance;
-    final Reference storageRef =
-        storage.ref().child('photos').child('photo.jpg');
+
+    final String timestamp = DateTime.now().toIso8601String();
+    final String fileName = 'photo_$timestamp.jpg';
+
+    final Reference storageRef = storage.ref().child('photos').child(fileName);
 
     try {
       final UploadTask uploadTask =
@@ -142,21 +148,17 @@ class _CameraAppState extends State<CameraApp> {
       await uploadTask.whenComplete(() async {
         final String photoURL = await storageRef.getDownloadURL();
         print(photoURL);
-        final CollectionReference photos =
-            FirebaseFirestore.instance.collection('photos');
-        await photos.add({
+        FirebaseFirestore.instance.collection('wildlife_trace').add({
           'url': photoURL,
           'latitude': _locationData?.latitude,
           'longitude': _locationData?.longitude,
+          'timestamp': timestamp,
         });
-
-        // 保存成功時の処理
         _showSnackBar('Photo saved successfully');
         _resetState();
       });
     } catch (e) {
-      // エラーが発生した場合の処理
-      print('Error saving photo: $e');
+      print('Error saving: $e');
       _showErrorDialog();
     }
   }
@@ -202,12 +204,14 @@ class PhotoPreviewScreen extends StatefulWidget {
   final XFile photo;
   final Function onRetake;
   final Function onSave;
+  final LocationData? locationData; // Add locationData parameter
 
   PhotoPreviewScreen({
     Key? key,
     required this.photo,
     required this.onRetake,
     required this.onSave,
+    required this.locationData, // Add locationData parameter
   }) : super(key: key);
 
   @override
@@ -224,6 +228,15 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
           Expanded(
             child: Center(
               child: Image.file(File(widget.photo.path)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              widget.locationData != null
+                  ? 'Latitude: ${widget.locationData!.latitude}, Longitude: ${widget.locationData!.longitude}'
+                  : 'Location information not available',
+              style: TextStyle(fontSize: 18),
             ),
           ),
           Row(

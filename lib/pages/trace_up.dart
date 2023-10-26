@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wildlife_app/widgets/organisms/trace_up/trace_up.dart';
+import 'package:wildlife_app/widgets/organisms/trace_up/index.dart';
 
 class TraceUpPage extends StatelessWidget {
   @override
@@ -8,7 +8,7 @@ class TraceUpPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('TraceUpPage'),
       ),
-      body: TraceUp(),
+      body: TraceUpIndex(),
     );
   }
 }

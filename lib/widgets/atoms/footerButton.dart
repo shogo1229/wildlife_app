@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class NavigationButton extends StatelessWidget {
   final String icon;
   final bool enabled;
-  final Widget? page; // Specify the target page widget
+  final Widget? page;
 
   NavigationButton({
     required this.icon,
@@ -14,12 +14,10 @@ class NavigationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: enabled
+      onPressed: enabled && page != null
           ? () {
-              if (page != null) {
-                Navigator.push(
-                    context, MaterialPageRoute(builder: (context) => page!));
-              }
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => page!));
             }
           : null,
       child: Text(icon),

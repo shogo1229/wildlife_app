@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:wildlife_app/widgets/organisms/trace_up/trace_up.dart';
 
-class traceUp extends StatelessWidget {
+class TraceUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ページ 1'),
+        title: Text('TraceUpPage'),
       ),
-      body: Center(
-        child: Text('これはページ 1 です。'),
-      ),
+      body: TraceUp(),
     );
   }
 }

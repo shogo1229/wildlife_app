@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:wildlife_app/widgets/organisms/ranking/ranking.dart';
 
-class ranking extends StatelessWidget {
+class RankingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ページ 1'),
+        title: Text('RankingPage'),
       ),
-      body: Center(
-        child: Text('これはページ 1 です。'),
-      ),
+      body: Ranking(),
     );
   }
 }

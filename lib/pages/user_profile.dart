@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:wildlife_app/widgets/organisms/user_profile/user_profile.dart';
 
-class userProfile extends StatelessWidget {
+class UserProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ページ 1'),
+        title: Text('UserProfilePage'),
       ),
-      body: Center(
-        child: Text('これはページ 1 です。'),
-      ),
+      body: UserProfile(),
     );
   }
 }

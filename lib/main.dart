@@ -5,6 +5,6 @@ void main() {
   runApp(new MaterialApp(
     debugShowCheckedModeBanner: false,
     color: Colors.white,
-    home: new AppHome(),
+    home: new HomePage(),
   ));
 }

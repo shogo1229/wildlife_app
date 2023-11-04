@@ -25,7 +25,6 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Photo Preview')),
       body: Column(
         children: [
           Expanded(

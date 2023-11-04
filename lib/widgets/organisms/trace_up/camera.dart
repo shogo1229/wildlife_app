@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -68,12 +67,6 @@ class _TraceCameraState extends State<TraceCamera> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              _locationData != null
-                  ? 'Latitude: ${_locationData!.latitude}, Longitude: ${_locationData!.longitude}'
-                  : 'Location information not available',
-              style: TextStyle(fontSize: 18),
-            ),
           ),
         ],
       ),
@@ -149,7 +142,7 @@ class _TraceCameraState extends State<TraceCamera> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
-      duration: Duration(seconds: 3),
+      duration: Duration(seconds: 1),
     ));
   }
 

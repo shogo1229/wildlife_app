@@ -7,12 +7,12 @@ import 'package:camera/camera.dart';
 import 'package:location/location.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/photo_preview_screen.dart';
 
-class CameraApp extends StatefulWidget {
+class TraceCamera extends StatefulWidget {
   @override
-  _CameraAppState createState() => _CameraAppState();
+  _TraceCameraState createState() => _TraceCameraState();
 }
 
-class _CameraAppState extends State<CameraApp> {
+class _TraceCameraState extends State<TraceCamera> {
   late CameraController _controller;
   LocationData? _locationData;
   bool _isPhotoPreviewVisible = false;
@@ -59,7 +59,6 @@ class _CameraAppState extends State<CameraApp> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('Camera App')),
       body: Column(
         children: [
           Expanded(

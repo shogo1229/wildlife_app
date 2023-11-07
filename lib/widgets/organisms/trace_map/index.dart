@@ -8,7 +8,7 @@ class TraceMapIndex extends StatelessWidget {
     return Column(
       children: <Widget>[
         Expanded(
-          child: flutterMAP(),
+          child: FlutterMapWithLocation(),
         ),
         Expanded(
           child: TraceMapFooter(),

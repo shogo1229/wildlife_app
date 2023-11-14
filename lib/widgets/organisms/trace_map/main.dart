@@ -11,6 +11,9 @@ class MyApp extends StatelessWidget {
       home: ChangeNotifierProvider<MainModel>(
         create: (_) => MainModel()..fetchBooks(),
         child: Scaffold(
+          appBar: AppBar(
+            title: Text('Latitude List'),
+          ),
           body: Consumer<MainModel>(
             builder: (context, model, child) {
               final books = model.books;
@@ -19,6 +22,9 @@ class MyApp extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text(books[index].title),
+                    subtitle: Text(
+                      'Latitude: ${books[index].latitude}, Longitude: ${books[index].longitude}',
+                    ),
                   );
                 },
               );

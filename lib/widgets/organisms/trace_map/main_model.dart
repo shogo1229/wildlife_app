@@ -8,7 +8,7 @@ class MainModel extends ChangeNotifier {
   Future<void> fetchBooks() async {
     final docs =
         await FirebaseFirestore.instance.collection('wildlife_trace').get();
-    final books = docs.docs.map((doc) => Book(doc)).toList();
+    final books = docs.docs.map((doc) => Book.fromSnapshot(doc)).toList();
     this.books = books;
     notifyListeners();
   }

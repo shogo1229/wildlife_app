@@ -9,19 +9,12 @@ class TracePinMap extends StatefulWidget {
 }
 
 class _TracePinMapState extends State<TracePinMap> {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final query = await _db.collection("users").where("userId", isEqualTo: firebaseUser.uid).get();
-  final CollectionReference _users =
-      FirebaseFirestore.instance.collection('wildlife_trace');
   late Stream<QuerySnapshot> _userStream;
   List<String> wildlifeData = [];
 
   @override
   void initState() {
     super.initState();
-
-    _userStream = _users.snapshots();
-
     _userStream.listen((QuerySnapshot snapshot) {
       final List<String> data = [];
       for (final QueryDocumentSnapshot document in snapshot.docs) {
@@ -50,7 +43,7 @@ class _TracePinMapState extends State<TracePinMap> {
                   Column(
                     children: wildlifeData.map((data) => Text(data)).toList(),
                   ),
-                ], 
+                ],
               ),
             ),
           ],
@@ -59,5 +52,3 @@ class _TracePinMapState extends State<TracePinMap> {
     );
   }
 }
-
-

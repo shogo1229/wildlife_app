@@ -10,9 +10,11 @@ class TraceUpIndex extends StatelessWidget {
     return Column(
       children: <Widget>[
         Expanded(
+          flex: 9, // adjust the flex values as needed
           child: TraceCamera(),
         ),
         Expanded(
+          flex: 1, // adjust the flex values as needed
           child: TraceUpFooter(),
         ),
       ],

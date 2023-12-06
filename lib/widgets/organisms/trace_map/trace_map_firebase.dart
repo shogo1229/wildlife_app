@@ -94,15 +94,29 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                         child: Icon(
                           Icons.location_on,
                           color: Colors.blue,
-                          size: 50, // Increase the size of the icon
+                          size: 50,
                         ),
                       ),
                       ...firebaseModel.firebase_data.map((data) => Marker(
-                            point: LatLng(data.latitude, data.longitude),
-                            width: 40,
-                            height: 40,
-                            child: Icon(Icons.camera_alt),
-                          )),
+                          point: LatLng(data.latitude, data.longitude),
+                          width: 40,
+                          height: 40,
+                          child: GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Container(
+                                    child: Image.network(data.title),
+                                  );
+                                },
+                              );
+                            },
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.red,
+                            ),
+                          ))),
                     ],
                   ),
                 ],

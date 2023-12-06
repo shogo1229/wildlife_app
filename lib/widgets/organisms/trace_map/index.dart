@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/molecules/trace_map/footer.dart';
 import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_data.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/trace_map.dart';
+import 'package:wildlife_app/widgets/organisms/trace_map/trace_map_firebase.dart';
 
 class TraceMapIndex extends StatelessWidget {
   @override
@@ -10,7 +10,7 @@ class TraceMapIndex extends StatelessWidget {
       children: <Widget>[
         Expanded(
           flex: 6,
-          child: FlutterMapWithLocation(),
+          child: FlutterMapFireBase(),
         ),
         Expanded(
           flex: 3,

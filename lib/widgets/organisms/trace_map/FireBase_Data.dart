@@ -1,6 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/FireBase_Data.dart';
 
 class FireBase_data {
   final String title;

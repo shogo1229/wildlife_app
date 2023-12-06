@@ -10,9 +10,6 @@ class GetFirebase extends StatelessWidget {
       home: ChangeNotifierProvider<GetFireBaseModel>(
         create: (_) => GetFireBaseModel()..fetchFirebase_data(),
         child: Scaffold(
-          appBar: AppBar(
-            title: Text('Latitude List'),
-          ),
           body: Consumer<GetFireBaseModel>(
             builder: (context, model, child) {
               final firebase_data = model.firebase_data;
@@ -20,7 +17,7 @@ class GetFirebase extends StatelessWidget {
                 itemCount: firebase_data.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(firebase_data[index].title),
+                    title: Image.network(firebase_data[index].title), // 画像を表示
                     subtitle: Text(
                       'Latitude: ${firebase_data[index].latitude}, Longitude: ${firebase_data[index].longitude}',
                     ),

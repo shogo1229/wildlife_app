@@ -8,6 +8,8 @@ class PhotoPreviewScreen extends StatefulWidget {
   final Function onRetake;
   final Function onSave;
   final LocationData? locationData;
+  final String userID;
+  final String animalType;
 
   PhotoPreviewScreen({
     Key? key,
@@ -15,6 +17,8 @@ class PhotoPreviewScreen extends StatefulWidget {
     required this.onRetake,
     required this.onSave,
     required this.locationData,
+    required this.userID,
+    required this.animalType,
   }) : super(key: key);
 
   @override
@@ -34,11 +38,25 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              widget.locationData != null
-                  ? 'Latitude: ${widget.locationData!.latitude}, Longitude: ${widget.locationData!.longitude}'
-                  : 'Location information not available',
-              style: TextStyle(fontSize: 18),
+            child: Column(
+              children: [
+                Text(
+                  widget.locationData != null
+                      ? 'Latitude: ${widget.locationData!.latitude}, Longitude: ${widget.locationData!.longitude}'
+                      : 'Location information not available',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'UserID: ${widget.userID}',
+                  style: TextStyle(fontSize: 18),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Animal Type: ${widget.animalType}',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
             ),
           ),
           Row(

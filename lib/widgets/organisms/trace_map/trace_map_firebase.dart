@@ -24,9 +24,21 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   void initState() {
     super.initState();
     getLocation().then((_) {
-      mapController.move(currentLocation, 14.0);
+      mapController.move(currentLocation, 16.0);
     });
-    firebaseModel.fetchFirebase_data(); // Added this line
+    firebaseModel.fetchFirebase_data();
+
+    // Subscribe to location changes
+    location.onLocationChanged.listen((LocationData? newLocation) {
+      setState(() {
+        if (newLocation != null) {
+          currentLocation =
+              LatLng(newLocation.latitude!, newLocation.longitude!);
+          currentLocationText =
+              'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
+        }
+      });
+    });
   }
 
   Future<void> getLocation() async {
@@ -48,7 +60,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   }
 
   void warpToCurrentLocation() {
-    mapController.move(currentLocation, 14.0);
+    mapController.move(currentLocation, 16.0);
   }
 
   @override
@@ -62,7 +74,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                 mapController: mapController,
                 options: MapOptions(
                   center: currentLocation,
-                  zoom: 14.0,
+                  zoom: 0.0,
                   interactiveFlags: InteractiveFlag.all,
                   enableScrollWheel: true,
                   scrollWheelVelocity: 0.00001,
@@ -74,15 +86,25 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                     userAgentPackageName: 'land_place',
                   ),
                   MarkerLayer(
-                      markers: firebaseModel.firebase_data
-                          .map((data) => // Changed this line
-                              Marker(
-                                  point: LatLng(data.latitude,
-                                      data.longitude), // Changed this line
-                                  width: 40,
-                                  height: 40,
-                                  child: FlutterLogo()))
-                          .toList()) // Added this line
+                    markers: [
+                      Marker(
+                        point: currentLocation,
+                        width: 200,
+                        height: 200,
+                        child: Icon(
+                          Icons.location_on,
+                          color: Colors.blue,
+                          size: 50, // Increase the size of the icon
+                        ),
+                      ),
+                      ...firebaseModel.firebase_data.map((data) => Marker(
+                            point: LatLng(data.latitude, data.longitude),
+                            width: 40,
+                            height: 40,
+                            child: Icon(Icons.camera_alt),
+                          )),
+                    ],
+                  ),
                 ],
               ),
             ),

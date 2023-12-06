@@ -16,6 +16,8 @@ class _TraceCameraState extends State<TraceCamera> {
   LocationData? _locationData;
   bool _isPhotoPreviewVisible = false;
   XFile? _capturedPhoto;
+  int? _selectedUserId;
+  String? _selectedAnimalType;
 
   @override
   void initState() {
@@ -49,7 +51,9 @@ class _TraceCameraState extends State<TraceCamera> {
         photo: _capturedPhoto!,
         onRetake: _retakePhoto,
         onSave: _savePhoto,
-        locationData: _locationData,
+        locationData: _locationData!,
+        userID: _selectedUserId.toString(),
+        animalType: _selectedAnimalType!,
       );
     }
 
@@ -71,9 +75,69 @@ class _TraceCameraState extends State<TraceCamera> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _takePicture,
+        onPressed: () => _showInputDialog(),
         child: Icon(Icons.camera),
       ),
+    );
+  }
+
+  Future<void> _showInputDialog() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Select User and Animal Type'),
+          content: Column(
+            children: [
+              DropdownButtonFormField<int>(
+                value: _selectedUserId,
+                onChanged: (int? value) {
+                  setState(() {
+                    _selectedUserId = value;
+                  });
+                },
+                items: List.generate(10, (index) {
+                  return DropdownMenuItem<int>(
+                    value: index + 1,
+                    child: Text('User ${index + 1}'),
+                  );
+                }),
+                decoration: InputDecoration(labelText: 'Select User ID'),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedAnimalType,
+                onChanged: (String? value) {
+                  setState(() {
+                    _selectedAnimalType = value;
+                  });
+                },
+                items: ['Boar', 'Deer'].map((animalType) {
+                  return DropdownMenuItem<String>(
+                    value: animalType,
+                    child: Text(animalType),
+                  );
+                }).toList(),
+                decoration: InputDecoration(labelText: 'Select Animal Type'),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Capture'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _takePicture();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -129,6 +193,8 @@ class _TraceCameraState extends State<TraceCamera> {
           'latitude': _locationData?.latitude,
           'longitude': _locationData?.longitude,
           'timestamp': timestamp,
+          'userId': _selectedUserId,
+          'animalType': _selectedAnimalType,
         });
         _showSnackBar('Photo saved successfully');
         _resetState();
@@ -172,6 +238,8 @@ class _TraceCameraState extends State<TraceCamera> {
       _locationData = null;
       _capturedPhoto = null;
       _isPhotoPreviewVisible = false;
+      _selectedUserId = null;
+      _selectedAnimalType = null;
     });
   }
 }

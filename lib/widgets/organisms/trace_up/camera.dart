@@ -25,17 +25,16 @@ class _TraceCameraState extends State<TraceCamera> {
     _initializeCamera();
   }
 
-  void _initializeCamera() async {
+  Future<void> _initializeCamera() async {
     final cameras = await availableCameras();
     final firstCamera = cameras.first;
 
     _controller = CameraController(firstCamera, ResolutionPreset.medium);
-    _controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
+    await _controller.initialize();
+
+    if (mounted) {
       setState(() {});
-    });
+    }
   }
 
   @override
@@ -141,7 +140,7 @@ class _TraceCameraState extends State<TraceCamera> {
     );
   }
 
-  void _takePicture() async {
+  Future<void> _takePicture() async {
     if (!_controller.value.isInitialized) {
       await _controller.initialize();
     }
@@ -188,6 +187,86 @@ class _TraceCameraState extends State<TraceCamera> {
       await uploadTask.whenComplete(() async {
         final String photoURL = await storageRef.getDownloadURL();
         print(photoURL);
+        //　 Update User_Information collection based on selected ID
+        if (_selectedAnimalType == 'Boar') {
+          print("ADD_boar");
+          print(_selectedUserId);
+
+          try {
+            // ユーザーを特定するクエリを実行
+            var querySnapshot = await FirebaseFirestore.instance
+                .collection('User_Information')
+                .where('User_ID',
+                    isEqualTo: int.parse(
+                        _selectedUserId.toString())) // 数値型に変換して一致するか確認
+                .get();
+
+            // クエリの結果に対する処理を定義
+            if (querySnapshot.docs.isNotEmpty) {
+              // ヒットした場合
+              print("HIT");
+
+              // ヒットしたドキュメントに対する処理
+              var doc = querySnapshot.docs[0];
+              print(
+                  "Query executed. Documents found: ${querySnapshot.docs.length}");
+              querySnapshot.docs.forEach((doc) {
+                print("User_ID in database: ${doc['User_ID']}");
+              });
+
+              await doc.reference.update({
+                'Boar_Point': FieldValue.increment(1),
+                'total_point': FieldValue.increment(1),
+              });
+            } else {
+              // ヒットしなかった場合の処理
+              print("User not found");
+            }
+          } catch (e) {
+            // エラーハンドリング
+            print('Error updating data: $e');
+          }
+        } else if (_selectedAnimalType == 'Deer') {
+          print("ADD_boar");
+          print(_selectedUserId);
+
+          try {
+            // ユーザーを特定するクエリを実行
+            var querySnapshot = await FirebaseFirestore.instance
+                .collection('User_Information')
+                .where('User_ID',
+                    isEqualTo: int.parse(
+                        _selectedUserId.toString())) // 数値型に変換して一致するか確認
+                .get();
+
+            // クエリの結果に対する処理を定義
+            if (querySnapshot.docs.isNotEmpty) {
+              // ヒットした場合
+              print("HIT");
+
+              // ヒットしたドキュメントに対する処理
+              var doc = querySnapshot.docs[0];
+              print(
+                  "Query executed. Documents found: ${querySnapshot.docs.length}");
+              querySnapshot.docs.forEach((doc) {
+                print("User_ID in database: ${doc['User_ID']}");
+              });
+
+              await doc.reference.update({
+                'Boar_Point': FieldValue.increment(1),
+                'total_point': FieldValue.increment(1),
+              });
+            } else {
+              // ヒットしなかった場合の処理
+              print("User not found");
+            }
+          } catch (e) {
+            // エラーハンドリング
+            print('Error updating data: $e');
+          }
+        }
+
+        // Save trace information in the wildlife_trace collection
         FirebaseFirestore.instance.collection('wildlife_trace').add({
           'url': photoURL,
           'latitude': _locationData?.latitude,
@@ -196,6 +275,7 @@ class _TraceCameraState extends State<TraceCamera> {
           'userId': _selectedUserId,
           'animalType': _selectedAnimalType,
         });
+
         _showSnackBar('Photo saved successfully');
         _resetState();
       });

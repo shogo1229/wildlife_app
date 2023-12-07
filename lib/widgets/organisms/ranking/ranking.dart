@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class WildlifeRanking {
@@ -43,5 +44,6 @@ class UserRank {
       deerPoint: doc['Deer_Point'],
       totalPoint: doc['total_point'],
     );
+
   }
 }

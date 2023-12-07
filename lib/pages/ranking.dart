@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:wildlife_app/widgets/organisms/ranking/index.dart';
 
 class RankingPage extends StatelessWidget {
@@ -8,6 +9,7 @@ class RankingPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('RankingPage'),
       ),
+
       body: RankingIndex(),
     );
   }

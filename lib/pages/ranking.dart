@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:wildlife_app/widgets/organisms/ranking/ranking.dart';
+import 'package:wildlife_app/widgets/organisms/ranking/index.dart';
 
 class RankingPage extends StatelessWidget {
   @override
@@ -8,7 +8,7 @@ class RankingPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('RankingPage'),
       ),
-      body: Ranking(),
+      body: RankingIndex(),
     );
   }
 }

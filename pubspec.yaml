@@ -42,6 +42,9 @@ dependencies:
   path: ^1.8.3
   path_provider: ^2.1.1
   cloud_firestore: ^4.9.3
+  flutter_map: ^6.0.1
+  provider: ^6.1.1
+  flutter_map_marker_popup: ^6.1.2
 
 dev_dependencies:
   flutter_test:

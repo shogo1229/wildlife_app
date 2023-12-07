@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/organisms/home/home.dart';
+import 'package:wildlife_app/widgets/organisms/home/index.dart';
 
 class HomePage extends StatelessWidget {
   @override

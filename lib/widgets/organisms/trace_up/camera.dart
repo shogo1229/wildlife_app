@@ -188,8 +188,8 @@ class _TraceCameraState extends State<TraceCamera> {
         final String photoURL = await storageRef.getDownloadURL();
         print(photoURL);
         //　 Update User_Information collection based on selected ID
-        if (_selectedAnimalType == 'Boar') {
-          print("ADD_boar");
+        if (_selectedAnimalType == 'Boar' || _selectedAnimalType == 'Deer') {
+          print("ADD_animal");
           print(_selectedUserId);
 
           try {
@@ -197,8 +197,7 @@ class _TraceCameraState extends State<TraceCamera> {
             var querySnapshot = await FirebaseFirestore.instance
                 .collection('User_Information')
                 .where('User_ID',
-                    isEqualTo: int.parse(
-                        _selectedUserId.toString())) // 数値型に変換して一致するか確認
+                    isEqualTo: int.parse(_selectedUserId.toString()))
                 .get();
 
             // クエリの結果に対する処理を定義
@@ -215,55 +214,29 @@ class _TraceCameraState extends State<TraceCamera> {
               });
 
               await doc.reference.update({
-                'Boar_Point': FieldValue.increment(1),
+                '${_selectedAnimalType}_Point': FieldValue.increment(1),
                 'total_point': FieldValue.increment(1),
               });
             } else {
               // ヒットしなかった場合の処理
               print("User not found");
+
+              // 新しいドキュメントを追加
+              await FirebaseFirestore.instance
+                  .collection('User_Information')
+                  .add({
+                'User_ID': int.parse(_selectedUserId.toString()),
+                'Boar_Point': 0,
+                'Deer_Point': 0,
+                'total_point': 0,
+              });
             }
           } catch (e) {
             // エラーハンドリング
             print('Error updating data: $e');
           }
-        } else if (_selectedAnimalType == 'Deer') {
-          print("ADD_boar");
-          print(_selectedUserId);
-
-          try {
-            // ユーザーを特定するクエリを実行
-            var querySnapshot = await FirebaseFirestore.instance
-                .collection('User_Information')
-                .where('User_ID',
-                    isEqualTo: int.parse(
-                        _selectedUserId.toString())) // 数値型に変換して一致するか確認
-                .get();
-
-            // クエリの結果に対する処理を定義
-            if (querySnapshot.docs.isNotEmpty) {
-              // ヒットした場合
-              print("HIT");
-
-              // ヒットしたドキュメントに対する処理
-              var doc = querySnapshot.docs[0];
-              print(
-                  "Query executed. Documents found: ${querySnapshot.docs.length}");
-              querySnapshot.docs.forEach((doc) {
-                print("User_ID in database: ${doc['User_ID']}");
-              });
-
-              await doc.reference.update({
-                'Boar_Point': FieldValue.increment(1),
-                'total_point': FieldValue.increment(1),
-              });
-            } else {
-              // ヒットしなかった場合の処理
-              print("User not found");
-            }
-          } catch (e) {
-            // エラーハンドリング
-            print('Error updating data: $e');
-          }
+        } else {
+          print("Invalid animal type");
         }
 
         // Save trace information in the wildlife_trace collection

@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:wildlife_app/widgets/molecules/trace_map/footer.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/trace_map_firebase.dart';
+import 'package:wildlife_app/widgets/molecules/home/footer.dart';
+import 'package:wildlife_app/widgets/organisms/home/trace_map.dart';
 
-class TraceMapIndex extends StatelessWidget {
+class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[
         Expanded(
-          flex: 9,
+          flex: 7,
           child: FlutterMapFireBase(),
         ),
         Expanded(
           flex: 1,
-          child: TraceMapFooter(),
+          child: HomeFooter(),
         ),
       ],
     );

@@ -46,6 +46,7 @@ dependencies:
   provider: ^6.1.1
   flutter_map_marker_popup: ^6.1.2
   connectivity_plus: ^5.0.2
+  image_picker: ^1.0.4
 
 dev_dependencies:
   flutter_test:

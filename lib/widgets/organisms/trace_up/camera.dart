@@ -99,7 +99,8 @@ class _TraceCameraState extends State<TraceCamera> {
                     child: Text('User ${index + 1}'),
                   );
                 }),
-                decoration: InputDecoration(labelText: 'Select User ID'),
+                decoration:
+                    InputDecoration(labelText: 'Select User ID'), // ユーザーIDの選択
               ),
               DropdownButtonFormField<String>(
                 value: _selectedAnimalType,
@@ -114,7 +115,8 @@ class _TraceCameraState extends State<TraceCamera> {
                     child: Text(animalType),
                   );
                 }).toList(),
-                decoration: InputDecoration(labelText: 'Select Animal Type'),
+                decoration: InputDecoration(
+                    labelText: 'Select Animal Type'), // 動物の種類の選択
               ),
             ],
           ),

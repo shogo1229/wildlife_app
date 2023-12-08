@@ -200,7 +200,6 @@ class _Local_CameraState extends State<Local_Camera> {
 
   Future<void> _uploadImages() async {
     if (!(await _isConnectedToNetwork())) {
-      // Device is not connected to the network, show an error message or take appropriate action.
       showDialog(
         context: context,
         builder: (context) {
@@ -221,11 +220,15 @@ class _Local_CameraState extends State<Local_Camera> {
         data.imageUrl = await _uploadImage(data.image);
         await _saveToFirestore(position, data.imageUrl, data.animalType,
             data.memo, _selectedUserId);
+
+        await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
+        await _updateAnimalPoints(_selectedUserId, data.animalType);
+
         setState(() {
           _images.remove(data);
         });
       } catch (e) {
-        print('画像のアップロード中にエラーが発生しました： $e');
+        print('Error during image upload: $e');
       }
     }
 
@@ -246,6 +249,58 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
+  Future<void> _updateAnimalPoints(int userId, String animalType) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          '${animalType}_Point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'total_point': 0,
+        });
+      }
+    } catch (e) {
+      print('Error updating animal-specific points: $e');
+    }
+  }
+
+  Future<void> _updateUserTotalPoints(int userId, int numberOfPhotos) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          'total_point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'total_point': numberOfPhotos,
+        });
+      }
+    } catch (e) {
+      print('Error updating user total points: $e');
+    }
+  }
+
   Future<String> _uploadImage(File image) async {
     final storage = FirebaseStorage.instance;
     final ref = storage.ref().child('images/${DateTime.now()}.jpg');
@@ -262,7 +317,7 @@ class _Local_CameraState extends State<Local_Camera> {
       'timestamp': DateTime.now(),
       'AnimalType': animalType,
       'Memo': memo,
-      'User_ID': selectedUserId, // FirestoreにUser_IDを保存
+      'User_ID': selectedUserId,
     });
   }
 

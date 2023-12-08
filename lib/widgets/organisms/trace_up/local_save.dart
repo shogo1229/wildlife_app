@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 
 class PhotoData {
   File image;
@@ -32,6 +34,7 @@ class AnimalTypeMemoPage extends StatefulWidget {
 class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
   String? _animalType;
   TextEditingController _memoController = TextEditingController();
+  int? _selectedUserId;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +59,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
             maxLines: 5,
           ),
           ElevatedButton(
-            onPressed: () => _completeSelection(),
+            onPressed: () => _completeSelection(context),
             child: Text('保存'),
           ),
         ],
@@ -100,9 +103,13 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
     });
   }
 
-  void _completeSelection() {
-    Navigator.of(context)
-        .pop({'animalType': _animalType, 'memo': _memoController.text});
+  void _completeSelection(BuildContext context) {
+    _selectedUserId = context.read<UserIdProvider>().selectedUserId;
+    Navigator.of(context).pop({
+      'animalType': _animalType,
+      'memo': _memoController.text,
+      'selectedUserId': _selectedUserId,
+    });
   }
 }
 
@@ -115,6 +122,13 @@ class _Local_CameraState extends State<Local_Camera> {
   static List<PhotoData> _images = [];
   final ImagePicker _picker = ImagePicker();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late int _selectedUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUserId = context.read<UserIdProvider>().selectedUserId;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +200,6 @@ class _Local_CameraState extends State<Local_Camera> {
 
   Future<void> _uploadImages() async {
     if (!(await _isConnectedToNetwork())) {
-      // Device is not connected to the network, show an error message or take appropriate action.
       showDialog(
         context: context,
         builder: (context) {
@@ -205,13 +218,17 @@ class _Local_CameraState extends State<Local_Camera> {
       try {
         Position position = await _getCurrentLocation();
         data.imageUrl = await _uploadImage(data.image);
-        await _saveToFirestore(
-            position, data.imageUrl, data.animalType, data.memo);
+        await _saveToFirestore(position, data.imageUrl, data.animalType,
+            data.memo, _selectedUserId);
+
+        await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
+        await _updateAnimalPoints(_selectedUserId, data.animalType);
+
         setState(() {
           _images.remove(data);
         });
       } catch (e) {
-        print('画像のアップロード中にエラーが発生しました： $e');
+        print('Error during image upload: $e');
       }
     }
 
@@ -232,6 +249,58 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
+  Future<void> _updateAnimalPoints(int userId, String animalType) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          '${animalType}_Point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'total_point': 0,
+        });
+      }
+    } catch (e) {
+      print('Error updating animal-specific points: $e');
+    }
+  }
+
+  Future<void> _updateUserTotalPoints(int userId, int numberOfPhotos) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          'total_point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'total_point': numberOfPhotos,
+        });
+      }
+    } catch (e) {
+      print('Error updating user total points: $e');
+    }
+  }
+
   Future<String> _uploadImage(File image) async {
     final storage = FirebaseStorage.instance;
     final ref = storage.ref().child('images/${DateTime.now()}.jpg');
@@ -240,7 +309,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   Future<void> _saveToFirestore(Position position, String imageUrl,
-      String animalType, String memo) async {
+      String animalType, String memo, int selectedUserId) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
@@ -248,6 +317,7 @@ class _Local_CameraState extends State<Local_Camera> {
       'timestamp': DateTime.now(),
       'AnimalType': animalType,
       'Memo': memo,
+      'User_ID': selectedUserId,
     });
   }
 

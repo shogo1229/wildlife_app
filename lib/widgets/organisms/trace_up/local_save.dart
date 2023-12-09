@@ -115,6 +115,31 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
   }
 }
 
+class UploadProgressModal extends StatefulWidget {
+  final String message;
+
+  UploadProgressModal({required this.message});
+
+  @override
+  _UploadProgressModalState createState() => _UploadProgressModalState();
+}
+
+class _UploadProgressModalState extends State<UploadProgressModal> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16.0),
+          Text(widget.message),
+        ],
+      ),
+    );
+  }
+}
+
 class Local_Camera extends StatefulWidget {
   @override
   _Local_CameraState createState() => _Local_CameraState();
@@ -233,6 +258,17 @@ class _Local_CameraState extends State<Local_Camera> {
 
     for (var data in imagesCopy) {
       try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return UploadProgressModal(
+              message:
+                  'Uploading ${_images.indexOf(data) + 1}/${_images.length}',
+            );
+          },
+        );
+
         Position position = data.position;
 
         data.imageUrl =
@@ -246,8 +282,11 @@ class _Local_CameraState extends State<Local_Camera> {
         setState(() {
           _images.remove(data);
         });
+
+        Navigator.pop(context); // Close the progress modal
       } catch (e) {
         print('Error during image upload: $e');
+        Navigator.pop(context); // Close the progress modal
       }
     }
 

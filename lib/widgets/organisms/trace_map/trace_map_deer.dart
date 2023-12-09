@@ -2,23 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart'; // Added this line
+import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
 
-void main() => runApp(MaterialApp(home: FlutterMapFireBase()));
+void main() => runApp(MaterialApp(home: FlutterMAP_Deer()));
 
-class FlutterMapFireBase extends StatefulWidget {
+class FlutterMAP_Deer extends StatefulWidget {
   @override
   _FlutterMapWithLocationState createState() => _FlutterMapWithLocationState();
 }
 
-class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
+class _FlutterMapWithLocationState extends State<FlutterMAP_Deer> {
   final MapController mapController = MapController();
   LatLng currentLocation = LatLng(0, 0);
   String currentLocationText = 'Loading...';
 
   Location location = Location();
 
-  GetFireBaseModel firebaseModel = GetFireBaseModel(); // Added this line
+  GetFireBaseModel firebaseModel = GetFireBaseModel();
 
   @override
   void initState() {
@@ -28,7 +28,6 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
     });
     firebaseModel.fetchFirebase_data();
 
-    // Subscribe to location changes
     location.onLocationChanged.listen((LocationData? newLocation) {
       setState(() {
         if (newLocation != null) {
@@ -42,7 +41,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   }
 
   Future<void> getLocation() async {
-    LocationData? _locationData; // nullableとして初期化
+    LocationData? _locationData;
     try {
       _locationData = await location.getLocation();
     } catch (e) {
@@ -53,10 +52,35 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
       setState(() {
         currentLocation =
             LatLng(_locationData!.latitude!, _locationData.longitude!);
-        // currentLocationText =
-        //     'Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}';
       });
     }
+  }
+
+  List<Marker> getFilteredMarkers() {
+    return firebaseModel.firebase_data
+        .where((data) => data.animalType == 'Deer') // Change to lowercase 'a'
+        .map((data) => Marker(
+              point: LatLng(data.latitude, data.longitude),
+              width: 40,
+              height: 40,
+              child: GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return Container(
+                        child: Image.network(data.title),
+                      );
+                    },
+                  );
+                },
+                child: Icon(
+                  Icons.camera_alt,
+                  color: Colors.red,
+                ),
+              ),
+            ))
+        .toList();
   }
 
   void warpToCurrentLocation() {
@@ -97,35 +121,12 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                           size: 50,
                         ),
                       ),
-                      ...firebaseModel.firebase_data.map((data) => Marker(
-                          point: LatLng(data.latitude, data.longitude),
-                          width: 40,
-                          height: 40,
-                          child: GestureDetector(
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return Container(
-                                    child: Image.network(data.title),
-                                  );
-                                },
-                              );
-                            },
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.red,
-                            ),
-                          ))),
+                      ...getFilteredMarkers(),
                     ],
                   ),
                 ],
               ),
             ),
-            // Padding(
-            //   padding: EdgeInsets.all(16.0),
-            //   child: Text(currentLocationText),
-            // ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
               child: Text('Warp to Current Location'),

@@ -217,7 +217,7 @@ class _Local_CameraState extends State<Local_Camera> {
     for (var data in imagesCopy) {
       try {
         Position position = await _getCurrentLocation();
-        data.imageUrl = await _uploadImage(data.image);
+        data.imageUrl = await _uploadImage(data.image, data.animalType);
         await _saveToFirestore(position, data.imageUrl, data.animalType,
             data.memo, _selectedUserId);
 
@@ -301,9 +301,12 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  Future<String> _uploadImage(File image) async {
+  Future<String> _uploadImage(File image, String animalType) async {
     final storage = FirebaseStorage.instance;
-    final ref = storage.ref().child('images/${DateTime.now()}.jpg');
+    final folderPath =
+        'images/$animalType'; // Use animalType in the folder path
+    final ref = storage.ref().child('$folderPath/${DateTime.now()}.jpg');
+
     await ref.putFile(image);
     return await ref.getDownloadURL();
   }

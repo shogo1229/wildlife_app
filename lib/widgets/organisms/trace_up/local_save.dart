@@ -13,12 +13,14 @@ class PhotoData {
   String imageUrl;
   String animalType;
   String memo;
+  Position position;
 
   PhotoData({
     required this.image,
     required this.imageUrl,
     required this.animalType,
     required this.memo,
+    required this.position,
   });
 }
 
@@ -144,8 +146,21 @@ class _Local_CameraState extends State<Local_Camera> {
               ),
               itemCount: _images.length,
               itemBuilder: (context, index) {
-                return GridTile(
-                  child: Image.file(_images[index].image),
+                return Column(
+                  children: [
+                    GridTile(
+                      child: Expanded(
+                        child: Image.file(_images[index].image),
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('Animal Type: ${_images[index].animalType}',
+                          style: TextStyle(fontSize: 12.0)),
+                      subtitle: Text(
+                          'Longitude: ${_images[index].position.longitude}\nLatitude: ${_images[index].position.latitude}',
+                          style: TextStyle(fontSize: 10.0)),
+                    ),
+                  ],
                 );
               },
             ),
@@ -171,11 +186,12 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
-      _showAnimalTypeMemoDialog(File(imageFile.path));
+      Position position = await _getCurrentLocation();
+      _showAnimalTypeMemoDialog(File(imageFile.path), position);
     }
   }
 
-  Future<void> _showAnimalTypeMemoDialog(File image) async {
+  Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -193,6 +209,7 @@ class _Local_CameraState extends State<Local_Camera> {
           imageUrl: '',
           animalType: animalType,
           memo: memo,
+          position: position,
         ));
       });
     }
@@ -216,8 +233,10 @@ class _Local_CameraState extends State<Local_Camera> {
 
     for (var data in imagesCopy) {
       try {
-        Position position = await _getCurrentLocation();
-        data.imageUrl = await _uploadImage(data.image, data.animalType);
+        Position position = data.position;
+
+        data.imageUrl =
+            await _uploadImage(data.image, data.animalType, position);
         await _saveToFirestore(position, data.imageUrl, data.animalType,
             data.memo, _selectedUserId);
 
@@ -301,10 +320,10 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  Future<String> _uploadImage(File image, String animalType) async {
+  Future<String> _uploadImage(
+      File image, String animalType, Position position) async {
     final storage = FirebaseStorage.instance;
-    final folderPath =
-        'images/$animalType'; // Use animalType in the folder path
+    final folderPath = 'images/$animalType';
     final ref = storage.ref().child('$folderPath/${DateTime.now()}.jpg');
 
     await ref.putFile(image);

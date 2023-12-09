@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FireBase_data {
-  final String title;
-  final double latitude;
-  final double longitude;
+  String title;
+  double latitude;
+  double longitude;
 
   FireBase_data({
     required this.title,
@@ -11,9 +11,19 @@ class FireBase_data {
     required this.longitude,
   });
 
-  // nullの場合にデフォルト値を使用するように更新されたコンストラクタ
-  FireBase_data.fromSnapshot(DocumentSnapshot snapshot)
-      : title = snapshot['url'] ?? '', // タイトルは必ず存在すると仮定し、存在しない場合は空文字列を設定
-        latitude = (snapshot['latitude'] as double?) ?? 0.0,
-        longitude = (snapshot['longitude'] as double?) ?? 0.0;
+  // DocumentSnapshotからFireBase_dataを作成するためのファクトリコンストラクタ
+  factory FireBase_data.fromSnapshot(DocumentSnapshot doc) {
+    Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+
+    if (data == null) {
+      // データがnullの場合は適切に処理するか、例外を投げるなどしてください
+      throw Exception("ドキュメントデータはnullです");
+    }
+
+    return FireBase_data(
+      title: data['url'] ?? '', // 'title'がnullの場合はデフォルト値を提供
+      latitude: data['latitude'] ?? 0.0, // 'latitude'がnullの場合はデフォルト値を提供
+      longitude: data['longitude'] ?? 0.0, // 'longitude'がnullの場合はデフォルト値を提供
+    );
+  }
 }

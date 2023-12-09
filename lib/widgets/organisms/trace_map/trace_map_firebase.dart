@@ -97,7 +97,31 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                           size: 50,
                         ),
                       ),
-                      ...firebaseModel.firebase_data.map((data) => Marker(
+                      ...firebaseModel.firebase_data.map((data) {
+                        Widget markerImage;
+                        // Choose marker image based on animalType
+                        if (data.animalType == 'Boar') {
+                          markerImage = Image.asset(
+                            'lib/assets/images/Boar_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        } else if (data.animalType == 'Deer') {
+                          markerImage = Image.asset(
+                            'lib/assets/images/Deer_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        } else {
+                          // Default marker for Others
+                          markerImage = Image.asset(
+                            'lib/assets/images/Other_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        }
+
+                        return Marker(
                           point: LatLng(data.latitude, data.longitude),
                           width: 40,
                           height: 40,
@@ -112,20 +136,15 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                                 },
                               );
                             },
-                            child: Icon(
-                              Icons.camera_alt,
-                              color: Colors.red,
-                            ),
-                          ))),
+                            child: markerImage,
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ],
               ),
             ),
-            // Padding(
-            //   padding: EdgeInsets.all(16.0),
-            //   child: Text(currentLocationText),
-            // ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
               child: Text('Warp to Current Location'),

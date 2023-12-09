@@ -74,9 +74,10 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                     },
                   );
                 },
-                child: Icon(
-                  Icons.camera_alt,
-                  color: Colors.red,
+                child: Image.asset(
+                  'lib/assets/images/Boar_pin_Normal.png',
+                  width: 40,
+                  height: 40,
                 ),
               ),
             ))

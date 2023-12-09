@@ -75,6 +75,10 @@ flutter:
     - lib/assets/images/Boar.png
     - lib/assets/images/Deer.png
     - lib/assets/images/Other.png
+    - lib/assets/images/Boar_pin_Normal.png
+    - lib/assets/images/Deer_pin_Normal.png
+    - lib/assets/images/Other_pin_Normal.png
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 

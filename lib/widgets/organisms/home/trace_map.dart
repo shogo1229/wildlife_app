@@ -14,6 +14,7 @@ class FlutterMapFireBase extends StatefulWidget {
 class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   final MapController mapController = MapController();
   LatLng currentLocation = LatLng(0, 0);
+  String currentLocationText = 'Loading...';
 
   Location location = Location();
 
@@ -33,6 +34,8 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
         if (newLocation != null) {
           currentLocation =
               LatLng(newLocation.latitude!, newLocation.longitude!);
+          currentLocationText =
+              'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
         }
       });
     });
@@ -50,6 +53,8 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
       setState(() {
         currentLocation =
             LatLng(_locationData!.latitude!, _locationData.longitude!);
+        // currentLocationText =
+        //     'Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}';
       });
     }
   }
@@ -92,28 +97,49 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                           size: 50,
                         ),
                       ),
-                      ...firebaseModel.firebase_data
-                          .take(5)
-                          .map((data) => Marker(
-                              point: LatLng(data.latitude, data.longitude),
-                              width: 40,
-                              height: 40,
-                              child: GestureDetector(
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return Container(
-                                        child: Image.network(data.title),
-                                      );
-                                    },
+                      ...firebaseModel.firebase_data.map((data) {
+                        Widget markerImage;
+                        // Choose marker image based on animalType
+                        if (data.animalType == 'Boar') {
+                          markerImage = Image.asset(
+                            'lib/assets/images/Boar_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        } else if (data.animalType == 'Deer') {
+                          markerImage = Image.asset(
+                            'lib/assets/images/Deer_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        } else {
+                          // Default marker for Others
+                          markerImage = Image.asset(
+                            'lib/assets/images/Other_pin_Normal.png', // Replace with your asset path
+                            width: 40,
+                            height: 40,
+                          );
+                        }
+
+                        return Marker(
+                          point: LatLng(data.latitude, data.longitude),
+                          width: 40,
+                          height: 40,
+                          child: GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Container(
+                                    child: Image.network(data.title),
                                   );
                                 },
-                                child: Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.red,
-                                ),
-                              ))),
+                              );
+                            },
+                            child: markerImage,
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ],

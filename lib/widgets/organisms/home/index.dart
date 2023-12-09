@@ -15,7 +15,7 @@ class _HomeState extends State<Home> {
     return Column(
       children: <Widget>[
         Expanded(
-          flex: 1,
+          flex: 2,
           child: userID_select(),
         ),
         Expanded(

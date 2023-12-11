@@ -8,13 +8,18 @@ class WildlifeRankingWidget extends StatelessWidget {
       future: WildlifeRanking().getRanking(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator(); // Add a loading indicator
+          return Center(
+            child: CircularProgressIndicator(),
+          );
         } else if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Center(
+            child: Text('Error: ${snapshot.error}'),
+          );
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Text('No ranking data available.');
+          return Center(
+            child: Text('No ranking data available.'),
+          );
         } else {
-          // Display the ranking using snapshot.data
           List<UserRank> ranking = snapshot.data!;
           List<UserRank> boarRanking = List.from(ranking)
             ..sort((a, b) => b.boarPoint.compareTo(a.boarPoint));
@@ -22,53 +27,53 @@ class WildlifeRankingWidget extends StatelessWidget {
             ..sort((a, b) => b.deerPoint.compareTo(a.deerPoint));
           List<UserRank> totalRanking = List.from(ranking)
             ..sort((a, b) => b.totalPoint.compareTo(a.totalPoint));
+
           return SingleChildScrollView(
+            padding: EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Boar Point Ranking:'),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: boarRanking.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(
-                        'ユーザー ${boarRanking[index].user_id}: ${boarRanking[index].boarPoint} ポイント',
-                      ),
-                    );
-                  },
-                ),
-                Text('Deer Point Ranking:'),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: deerRanking.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(
-                        'ユーザー ${deerRanking[index].user_id}: ${deerRanking[index].deerPoint} ポイント',
-                      ),
-                    );
-                  },
-                ),
-                Text('Total Point Ranking:'),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: totalRanking.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(
-                        'ユーザー ${totalRanking[index].user_id}: ${totalRanking[index].totalPoint} ポイント',
-                      ),
-                    );
-                  },
-                ),
+                buildRankingSection('Boar Point Ranking', boarRanking),
+                buildRankingSection('Deer Point Ranking', deerRanking),
+                buildRankingSection('Total Point Ranking', totalRanking),
               ],
             ),
           );
         }
       },
+    );
+  }
+
+  Widget buildRankingSection(String title, List<UserRank> ranking) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 8.0),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: ranking.length,
+          itemBuilder: (context, index) {
+            return Card(
+              elevation: 3.0,
+              margin: EdgeInsets.symmetric(vertical: 4.0),
+              child: ListTile(
+                title: Text(
+                  'ユーザー ${ranking[index].user_id}: ${ranking[index].boarPoint} ポイント',
+                  style: TextStyle(fontSize: 16.0),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

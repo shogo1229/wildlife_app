@@ -103,21 +103,21 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                         if (data.animalType == 'Boar') {
                           markerImage = Image.asset(
                             'lib/assets/images/Boar_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            width: 20,
+                            height: 20,
                           );
                         } else if (data.animalType == 'Deer') {
                           markerImage = Image.asset(
                             'lib/assets/images/Deer_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            width: 20,
+                            height: 20,
                           );
                         } else {
                           // Default marker for Others
                           markerImage = Image.asset(
                             'lib/assets/images/Other_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            width: 20,
+                            height: 20,
                           );
                         }
 
@@ -147,7 +147,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('Warp to Current Location'),
+              child: Text('現在地に戻る'),
             ),
           ],
         ),

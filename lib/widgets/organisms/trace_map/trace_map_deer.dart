@@ -4,8 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
 
-void main() => runApp(MaterialApp(home: FlutterMAP_Deer()));
-
 class FlutterMAP_Deer extends StatefulWidget {
   @override
   _FlutterMapWithLocationState createState() => _FlutterMapWithLocationState();
@@ -67,9 +65,66 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Deer> {
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
+                    isScrollControlled: true,
                     builder: (BuildContext context) {
-                      return Container(
-                        child: Image.network(data.title),
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: Container(
+                              padding: EdgeInsets.all(16.0),
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Image.network(
+                                        data.title,
+                                        height: 500,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        'Animal Type: ${data.animalType}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Latitude: ${data.latitude}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Longitude: ${data.longitude}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('閉じる'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       );
                     },
                   );

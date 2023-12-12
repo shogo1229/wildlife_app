@@ -24,19 +24,26 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
   void initState() {
     super.initState();
     getLocation().then((_) {
-      mapController.move(currentLocation, 16.0);
+      if (mounted) {
+        setState(() {
+          mapController.move(currentLocation, 16.0);
+        });
+      }
     });
+
     firebaseModel.fetchFirebase_data();
 
     location.onLocationChanged.listen((LocationData? newLocation) {
-      setState(() {
-        if (newLocation != null) {
-          currentLocation =
-              LatLng(newLocation.latitude!, newLocation.longitude!);
-          currentLocationText =
-              'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
-        }
-      });
+      if (mounted) {
+        setState(() {
+          if (newLocation != null) {
+            currentLocation =
+                LatLng(newLocation.latitude!, newLocation.longitude!);
+            currentLocationText =
+                '緯度: ${newLocation.latitude}, 経度: ${newLocation.longitude}';
+          }
+        });
+      }
     });
   }
 
@@ -45,20 +52,22 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
     try {
       _locationData = await location.getLocation();
     } catch (e) {
-      print('Failed to get location: $e');
+      print('位置情報の取得に失敗しました: $e');
     }
 
     if (_locationData != null) {
-      setState(() {
-        currentLocation =
-            LatLng(_locationData!.latitude!, _locationData.longitude!);
-      });
+      if (mounted) {
+        setState(() {
+          currentLocation =
+              LatLng(_locationData!.latitude!, _locationData.longitude!);
+        });
+      }
     }
   }
 
   List<Marker> getFilteredMarkers() {
     return firebaseModel.firebase_data
-        .where((data) => data.animalType == 'Boar') // Change to lowercase 'a'
+        .where((data) => data.animalType == 'Boar')
         .map((data) => Marker(
               point: LatLng(data.latitude, data.longitude),
               width: 40,
@@ -67,9 +76,66 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                 onTap: () {
                   showModalBottomSheet(
                     context: context,
+                    isScrollControlled: true,
                     builder: (BuildContext context) {
-                      return Container(
-                        child: Image.network(data.title),
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          child: Center(
+                            child: Container(
+                              padding: EdgeInsets.all(16.0),
+                              child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Image.network(
+                                        data.title,
+                                        height: 500,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        '動物の種類: ${data.animalType}',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        '緯度: ${data.latitude}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        '経度: ${data.longitude}',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                      SizedBox(height: 16),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('閉じる'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       );
                     },
                   );
@@ -130,7 +196,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('Warp to Current Location'),
+              child: Text('現在地に移動'),
             ),
           ],
         ),

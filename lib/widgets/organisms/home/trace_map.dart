@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart'; // Added this line
+import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
 
 void main() => runApp(MaterialApp(home: FlutterMapFireBase()));
 
@@ -18,7 +18,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
 
   Location location = Location();
 
-  GetFireBaseModel firebaseModel = GetFireBaseModel(); // Added this line
+  GetFireBaseModel firebaseModel = GetFireBaseModel();
 
   @override
   void initState() {
@@ -28,7 +28,6 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
     });
     firebaseModel.fetchFirebase_data();
 
-    // Subscribe to location changes
     location.onLocationChanged.listen((LocationData? newLocation) {
       setState(() {
         if (newLocation != null) {
@@ -42,7 +41,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   }
 
   Future<void> getLocation() async {
-    LocationData? _locationData; // nullableとして初期化
+    LocationData? _locationData;
     try {
       _locationData = await location.getLocation();
     } catch (e) {
@@ -53,14 +52,78 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
       setState(() {
         currentLocation =
             LatLng(_locationData!.latitude!, _locationData.longitude!);
-        // currentLocationText =
-        //     'Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}';
       });
     }
   }
 
   void warpToCurrentLocation() {
     mapController.move(currentLocation, 16.0);
+  }
+
+  Widget buildImageModal(
+      String imageUrl, String animalType, double latitude, double longitude) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+      },
+      child: Container(
+        color: Colors.grey,
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(16.0),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 8, // Add elevation for a shadow effect
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        imageUrl,
+                        height: 500,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Animal Type: $animalType',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Latitude: $latitude',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Longitude: $longitude',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('閉じる'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -99,25 +162,23 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                       ),
                       ...firebaseModel.firebase_data.map((data) {
                         Widget markerImage;
-                        // Choose marker image based on animalType
                         if (data.animalType == 'Boar') {
                           markerImage = Image.asset(
-                            'lib/assets/images/Boar_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            'lib/assets/images/Boar_pin_Normal.png',
+                            width: 20,
+                            height: 20,
                           );
                         } else if (data.animalType == 'Deer') {
                           markerImage = Image.asset(
-                            'lib/assets/images/Deer_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            'lib/assets/images/Deer_pin_Normal.png',
+                            width: 20,
+                            height: 20,
                           );
                         } else {
-                          // Default marker for Others
                           markerImage = Image.asset(
-                            'lib/assets/images/Other_pin_Normal.png', // Replace with your asset path
-                            width: 40,
-                            height: 40,
+                            'lib/assets/images/Other_pin_Normal.png',
+                            width: 20,
+                            height: 20,
                           );
                         }
 
@@ -129,9 +190,13 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                             onTap: () {
                               showModalBottomSheet(
                                 context: context,
+                                isScrollControlled: true,
                                 builder: (BuildContext context) {
-                                  return Container(
-                                    child: Image.network(data.title),
+                                  return buildImageModal(
+                                    data.title,
+                                    data.animalType,
+                                    data.latitude,
+                                    data.longitude,
                                   );
                                 },
                               );
@@ -147,7 +212,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('Warp to Current Location'),
+              child: Text('現在地に戻る'),
             ),
           ],
         ),

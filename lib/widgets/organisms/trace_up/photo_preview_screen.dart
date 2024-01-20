@@ -40,6 +40,7 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                // 位置情報の表示
                 Text(
                   widget.locationData != null
                       ? 'Latitude: ${widget.locationData!.latitude}, Longitude: ${widget.locationData!.longitude}'
@@ -47,11 +48,13 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 16),
+                // ユーザーIDの表示
                 Text(
                   'UserID: ${widget.userID}',
                   style: TextStyle(fontSize: 18),
                 ),
                 SizedBox(height: 8),
+                // 動物の種類の表示
                 Text(
                   'Animal Type: ${widget.animalType}',
                   style: TextStyle(fontSize: 18),
@@ -62,6 +65,7 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 再撮影ボタン
               ElevatedButton(
                 onPressed: () {
                   widget.onRetake();
@@ -69,6 +73,7 @@ class _PhotoPreviewScreenState extends State<PhotoPreviewScreen> {
                 child: Text('Retake'),
               ),
               SizedBox(width: 16),
+              // 保存ボタン
               ElevatedButton(
                 onPressed: () {
                   widget.onSave();

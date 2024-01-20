@@ -47,7 +47,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('見つけた痕跡の情報を選択してください'),
+      title: Text('痕跡の情報を選択してください'),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,8 +67,8 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
             Wrap(
               alignment: WrapAlignment.spaceEvenly,
               children: [
-                _buildTraceTypeButton('足跡', 'footprint'),
-                _buildTraceTypeButton('糞', 'dropping'),
+                _buildTraceTypeButton('足跡', 'animal_footprint'),
+                _buildTraceTypeButton('糞', 'animal_dropping'),
                 _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping'),
                 _buildTraceTypeButton('角こすり跡', 'horn-rubbing'),
                 _buildTraceTypeButton('獣道', 'animal-trail'),
@@ -90,7 +90,15 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
             // 保存ボタン
             ElevatedButton(
               onPressed: () => _completeSelection(context),
-              child: Text('保存'),
+              style: ElevatedButton.styleFrom(
+                primary: Colors.blue, // グレーの背景色
+              ),
+              child: Text(
+                '保存',
+                style: TextStyle(
+                  color: Colors.white, // 白い文字色
+                ),
+              ),
             ),
           ],
         ),
@@ -98,7 +106,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
     );
   }
 
-  // 痕跡の種類ボタンを構築する関数
+// 痕跡の種類ボタンを構築する関数
   Widget _buildTraceTypeButton(String label, String type) {
     return GestureDetector(
       onTap: () => _selectTraceType(type),
@@ -106,10 +114,15 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           border: Border.all(
-            color: _traceType == type ? Colors.red : Colors.transparent,
+            color: _traceType == type
+                ? Colors.red
+                : Colors.grey, // Default color is gray
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(8.0),
+          color: _traceType == type
+              ? Colors.grey.withOpacity(0.5)
+              : Colors.transparent,
         ),
         margin: EdgeInsets.all(8.0),
         child: Text(
@@ -120,7 +133,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
     );
   }
 
-  // 動物の種類ボタンを構築する関数
+// 動物の種類ボタンを構築する関数
   Widget _buildAnimalTypeButton(String? imagePath, String type) {
     return GestureDetector(
       onTap: () => _selectAnimalType(type),
@@ -128,10 +141,15 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           border: Border.all(
-            color: _animalType == type ? Colors.red : Colors.transparent,
+            color: _animalType == type
+                ? Colors.red
+                : Colors.grey, // Default color is gray
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(8.0),
+          color: _animalType == type
+              ? Colors.grey.withOpacity(0.5)
+              : Colors.transparent,
         ),
         margin: EdgeInsets.all(8.0),
         child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/molecules/home/footer.dart';
 import 'package:wildlife_app/widgets/organisms/home/trace_map.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
+import 'package:wildlife_app/widgets/organisms/home/get_userUID.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -15,11 +16,11 @@ class _HomeState extends State<Home> {
     return Column(
       children: <Widget>[
         Expanded(
-          flex: 2,
-          child: userID_select(),
+          flex: 1,
+          child: GetUserName(),
         ),
         Expanded(
-          flex: 7,
+          flex: 8,
           child: FlutterMapFireBase(),
         ),
         Expanded(

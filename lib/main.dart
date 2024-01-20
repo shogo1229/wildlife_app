@@ -8,14 +8,30 @@ import 'package:wildlife_app/util/firebase_options.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import '../pages/home.dart';
 
+class UserProvider extends ChangeNotifier {
+  User? _user;
+
+  void setUser(User user) {
+    _user = user;
+    notifyListeners();
+  }
+
+  User? getUser() {
+    return _user;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => UserIdProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserIdProvider()),
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+      ],
       child: MyApp(),
     ),
   );
@@ -39,6 +55,26 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _password = '';
+
+  Future<void> _showErrorDialog(String message) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +120,7 @@ class _LoginPageState extends State<LoginPage> {
                     }
                   } catch (e) {
                     print(e);
+                    _showErrorDialog("ユーザー登録エラー: $e");
                   }
                 },
               ),
@@ -96,6 +133,8 @@ class _LoginPageState extends State<LoginPage> {
                                 email: _email, password: _password))
                         .user;
                     if (user != null) {
+                      Provider.of<UserProvider>(context, listen: false)
+                          .setUser(user);
                       print("ログインしました　${user.email} , ${user.uid}");
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
@@ -105,9 +144,11 @@ class _LoginPageState extends State<LoginPage> {
                     }
                   } catch (e) {
                     print(e);
+                    _showErrorDialog("$e");
                   }
                 },
               ),
+
               // Other buttons and UI elements
             ],
           ),

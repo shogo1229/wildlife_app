@@ -82,6 +82,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
     // ユーザープロバイダーからユーザーを取得
     User? user = FirebaseAuth.instance.currentUser;
+    Provider.of<UserProvider>(context, listen: false).setUser(user!);
     return Scaffold(
       appBar: AppBar(
         title: Text('ユーザー登録'),

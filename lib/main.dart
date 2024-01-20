@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 // Your existing imports
 import 'package:wildlife_app/util/firebase_options.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
+import 'package:wildlife_app/widgets/organisms/login/signup_form.dart';
 import '../pages/home.dart';
 
 class UserProvider extends ChangeNotifier {
@@ -114,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                       print("ユーザ登録しました ${user.email} , ${user.uid}");
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (context) => HomePage(),
+                          builder: (context) => RegistrationPage(),
                         ),
                       );
                     }

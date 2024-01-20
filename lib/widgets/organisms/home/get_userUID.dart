@@ -33,6 +33,7 @@ class UserInformationMenus extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
+            print(user?.uid);
             return Center(
               child: Text('User not found'),
             );

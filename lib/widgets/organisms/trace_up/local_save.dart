@@ -193,6 +193,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
     _selectedUserId = context.read<UserIdProvider>().selectedUserId;
     Navigator.of(context).pop({
       'animalType': _animalType,
+      'traceType': _traceType,
       'memo': _memoController.text,
       'selectedUserId': _selectedUserId,
     });
@@ -241,6 +242,36 @@ class _Local_CameraState extends State<Local_Camera> {
       FirebaseFirestore.instance; // Firebase Firestore
   late int _selectedUserId; // 選択されたユーザーのID
 
+  String getTraceType(String traceType) {
+    switch (traceType) {
+      case 'animal_footprint':
+        return '足跡';
+      case 'animal_dropping':
+        return '糞';
+      case 'bark-stripping':
+        return '樹皮剥ぎ跡';
+      case 'horn-rubbing':
+        return '角こすり跡';
+      case 'animal-trail':
+        return '獣道';
+      default:
+        return 'Unknown'; // Handle unknown trace types if needed
+    }
+  }
+
+  String getAnimalType(String animalType) {
+    switch (animalType) {
+      case 'Boar':
+        return 'イノシシ';
+      case 'Deer':
+        return 'シカ';
+      case 'Other':
+        return 'その他/不明';
+      default:
+        return 'error'; // Handle unknown trace types if needed
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -272,12 +303,25 @@ class _Local_CameraState extends State<Local_Camera> {
                     ),
                     ListTile(
                       title: Text(
-                        'Animal Type: ${_images[index].animalType}',
+                        '獣種: ${getAnimalType(_images[index].animalType)}',
                         style: TextStyle(fontSize: 12.0),
                       ),
-                      subtitle: Text(
-                        'Longitude: ${_images[index].position.longitude}\nLatitude: ${_images[index].position.latitude}',
-                        style: TextStyle(fontSize: 10.0),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '痕跡種: ${getTraceType(_images[index].traceType)}',
+                            style: TextStyle(fontSize: 12.0),
+                          ),
+                          Text(
+                            '緯度: ${_images[index].position.latitude}',
+                            style: TextStyle(fontSize: 10.0),
+                          ),
+                          Text(
+                            '経度: ${_images[index].position.longitude}',
+                            style: TextStyle(fontSize: 10.0),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -323,7 +367,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
     if (result != null) {
       String animalType = result['animalType'];
-      String traceType = result['traceType'] ?? ''; // 痕跡の種類の新しいフィールド
+      String traceType = result['traceType'] ?? ''; // Corrected here
       String memo = result['memo'];
 
       setState(() {
@@ -331,7 +375,7 @@ class _Local_CameraState extends State<Local_Camera> {
           image: image,
           imageUrl: '',
           animalType: animalType,
-          traceType: traceType,
+          traceType: traceType, // Corrected here
           memo: memo,
           position: position,
         ));

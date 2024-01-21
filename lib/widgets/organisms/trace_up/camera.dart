@@ -22,6 +22,7 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   Future<void> _initializeCamera() async {
+    // 利用可能なカメラを取得し、最初のカメラを初期化します。
     final cameras = await availableCameras();
     final firstCamera = cameras.first;
 
@@ -35,6 +36,7 @@ class _TraceCameraState extends State<TraceCamera> {
 
   @override
   void dispose() {
+    // ウィジェットが破棄される際にカメラコントローラーを破棄します。
     _controller.dispose();
     super.dispose();
   }
@@ -56,6 +58,7 @@ class _TraceCameraState extends State<TraceCamera> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // 写真を撮影またはアップロードするための浮動アクションボタン。
                 FloatingActionButton(
                   onPressed: _capturedPhotos.isNotEmpty
                       ? _uploadPhotos
@@ -64,6 +67,7 @@ class _TraceCameraState extends State<TraceCamera> {
                       ? Icon(Icons.cloud_upload)
                       : Icon(Icons.camera),
                 ),
+                // 写真がキャプチャされた場合に状態をリセットする追加のボタン。
                 if (_capturedPhotos.isNotEmpty)
                   FloatingActionButton(
                     onPressed: _resetState,
@@ -79,13 +83,15 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   Future<void> _showInputDialog() async {
+    // 写真をキャプチャする前にユーザーと動物の種類を選択するダイアログを表示します。
     await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Select User and Animal Type'),
+          title: Text('ユーザーと動物の種類を選択'),
           content: Column(
             children: [
+              // ユーザーIDを選択するためのドロップダウン。
               DropdownButtonFormField<int>(
                 value: _selectedUserId,
                 onChanged: (int? value) {
@@ -96,12 +102,13 @@ class _TraceCameraState extends State<TraceCamera> {
                 items: List.generate(10, (index) {
                   return DropdownMenuItem<int>(
                     value: index + 1,
-                    child: Text('User ${index + 1}'),
+                    child: Text('ユーザー ${index + 1}'),
                   );
                 }),
                 decoration:
-                    InputDecoration(labelText: 'Select User ID'), // ユーザーIDの選択
+                    InputDecoration(labelText: 'ユーザーIDを選択'), // ユーザーIDの選択
               ),
+              // 動物の種類を選択するためのドロップダウン。
               DropdownButtonFormField<String>(
                 value: _selectedAnimalType,
                 onChanged: (String? value) {
@@ -109,26 +116,27 @@ class _TraceCameraState extends State<TraceCamera> {
                     _selectedAnimalType = value;
                   });
                 },
-                items: ['Boar', 'Deer'].map((animalType) {
+                items: ['イノシシ', 'シカ'].map((animalType) {
                   return DropdownMenuItem<String>(
                     value: animalType,
                     child: Text(animalType),
                   );
                 }).toList(),
-                decoration: InputDecoration(
-                    labelText: 'Select Animal Type'), // 動物の種類の選択
+                decoration: InputDecoration(labelText: '動物の種類を選択'), // 動物の種類の選択
               ),
             ],
           ),
           actions: <Widget>[
+            // ダイアログ内のキャンセルボタン。
             TextButton(
-              child: Text('Cancel'),
+              child: Text('キャンセル'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
+            // ダイアログ内の写真をキャプチャするボタン。
             TextButton(
-              child: Text('Capture'),
+              child: Text('キャプチャ'),
               onPressed: () {
                 Navigator.of(context).pop();
                 _takePicture();
@@ -141,6 +149,7 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   Future<void> _takePicture() async {
+    // 写真を撮影し、キャプチャされた写真をリストに追加します。
     if (!_controller.value.isInitialized) {
       await _controller.initialize();
     }
@@ -152,8 +161,9 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   Future<void> _uploadPhotos() async {
+    // キャプチャされた写真をFirebase Storageにアップロードします。
     if (_capturedPhotos.isEmpty) {
-      return; // No photos to upload
+      return; // アップロードする写真がありません
     }
 
     final FirebaseStorage storage = FirebaseStorage.instance;
@@ -171,16 +181,17 @@ class _TraceCameraState extends State<TraceCamera> {
           print(photoURL);
         });
       } catch (e) {
-        print('Error uploading photo: $e');
+        print('写真のアップロードエラー: $e');
         _showErrorDialog();
       }
     }
 
-    _showSnackBar('Photos uploaded successfully');
+    _showSnackBar('写真が正常にアップロードされました');
     _resetState();
   }
 
   void _resetState() {
+    // キャプチャされた写真と選択された値をクリアして状態をリセットします。
     setState(() {
       _capturedPhotos.clear();
       _selectedUserId = null;
@@ -189,6 +200,7 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   void _showSnackBar(String message) {
+    // メッセージを含むスナックバーを表示します。
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
       duration: Duration(seconds: 1),
@@ -196,13 +208,15 @@ class _TraceCameraState extends State<TraceCamera> {
   }
 
   void _showErrorDialog() {
+    // 写真のアップロードに問題がある場合にエラーダイアログを表示します。
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Error'),
-          content: Text('Failed to upload the photos. Please try again.'),
+          title: Text('エラー'),
+          content: Text('写真のアップロードに失敗しました。もう一度お試しください。'),
           actions: <Widget>[
+            // エラーダイアログ内のOKボタン。
             TextButton(
               child: Text('OK'),
               onPressed: () {

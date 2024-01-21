@@ -23,7 +23,7 @@ class WildlifeRanking {
 }
 
 class UserRank {
-  final int user_id;
+  final String user_id;
   final int boarPoint;
   final int deerPoint;
   final int totalPoint;

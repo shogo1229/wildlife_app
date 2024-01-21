@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
-import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 
 class GetUserName extends StatelessWidget {
   @override

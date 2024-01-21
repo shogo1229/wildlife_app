@@ -19,6 +19,10 @@ class UserInformationMenus extends StatelessWidget {
     User? user = Provider.of<UserProvider>(context).getUser();
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('User Information'),
+        centerTitle: true,
+      ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('User_Information')
@@ -45,7 +49,7 @@ class UserInformationMenus extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildUserNameCard(userDocument['User_Name']),
+                _buildUserNameCard(context, userDocument['User_Name']),
                 SizedBox(height: 16),
                 _buildInfoCard('Total Point', userDocument['total_point']),
                 _buildInfoCard('Boar Point', userDocument['Boar_Point']),
@@ -59,7 +63,7 @@ class UserInformationMenus extends StatelessWidget {
     );
   }
 
-  Widget _buildUserNameCard(String userName) {
+  Widget _buildUserNameCard(BuildContext context, String userName) {
     return Card(
       elevation: 5,
       margin: EdgeInsets.symmetric(vertical: 8),
@@ -77,8 +81,58 @@ class UserInformationMenus extends StatelessWidget {
             fontSize: 20,
           ),
         ),
+        trailing: IconButton(
+          icon: Icon(Icons.edit),
+          onPressed: () => _showEditNameDialog(context, userName),
+        ),
       ),
     );
+  }
+
+  void _showEditNameDialog(BuildContext context, String currentName) {
+    TextEditingController _nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit User Name'),
+          content: TextField(
+            controller: _nameController,
+            decoration: InputDecoration(labelText: 'New Name'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Save'),
+              onPressed: () async {
+                String newName = _nameController.text.trim();
+                if (newName.isNotEmpty) {
+                  await _updateUserName(newName);
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updateUserName(String newName) async {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('User_Information')
+          .doc(user.uid)
+          .update({'User_Name': newName});
+    }
   }
 
   Widget _buildInfoCard(String title, dynamic value) {

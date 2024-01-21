@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/molecules/home/footer.dart';
 import 'package:wildlife_app/widgets/organisms/home/trace_map.dart';
-import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import 'package:wildlife_app/widgets/organisms/home/get_userUID.dart';
 
 class Home extends StatefulWidget {

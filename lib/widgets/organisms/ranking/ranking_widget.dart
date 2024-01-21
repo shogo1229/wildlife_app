@@ -66,7 +66,17 @@ class WildlifeRankingWidget extends StatelessWidget {
               margin: EdgeInsets.symmetric(vertical: 4.0),
               child: ListTile(
                 title: Text(
-                  'ユーザー ${ranking[index].user_id}: ${ranking[index].boarPoint} ポイント',
+                  () {
+                    if (title == 'Boar Point Ranking') {
+                      return '${ranking[index].user_name}: ${ranking[index].boarPoint} ポイント';
+                    } else if (title == 'Deer Point Ranking') {
+                      return '${ranking[index].user_name}: ${ranking[index].deerPoint} ポイント';
+                    } else if (title == 'Total Point Ranking') {
+                      return '${ranking[index].user_name}: ${ranking[index].totalPoint} ポイント';
+                    } else {
+                      return 'error 管理者に連絡を'; // 未知のタイトルに対するデフォルトの処理
+                    }
+                  }(),
                   style: TextStyle(fontSize: 16.0),
                 ),
               ),

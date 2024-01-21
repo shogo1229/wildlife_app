@@ -60,12 +60,13 @@ class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _password = '';
 
+  // エラーダイアログを表示するメソッド
   Future<void> _showErrorDialog(String message) async {
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Error'),
+          title: Text('エラー'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
@@ -82,6 +83,9 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ページをビルドする際にログイン状態を確認
+    checkLoginStatus();
+
     return Scaffold(
       body: Center(
         child: Container(
@@ -153,11 +157,26 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
 
-              // Other buttons and UI elements
+              // その他のボタンやUI要素
             ],
           ),
         ),
       ),
     );
+  }
+
+  // ログイン状態を確認し、適切な画面に遷移
+  void checkLoginStatus() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // ユーザーがすでにログインしている場合、HomePageに遷移
+      Provider.of<UserProvider>(context, listen: false).setUser(user);
+      print("自動ログインしました ${user.email} , ${user.uid}");
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => HomePage(),
+        ),
+      );
+    }
   }
 }

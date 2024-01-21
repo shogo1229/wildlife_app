@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
+import 'package:wildlife_app/pages/login.dart';
 
 class GetUserName extends StatelessWidget {
   @override
@@ -18,6 +19,7 @@ class UserInformationMenus extends StatelessWidget {
   Widget build(BuildContext context) {
     User? user = Provider.of<UserProvider>(context).getUser();
     print(user?.uid);
+
     return Scaffold(
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
@@ -45,9 +47,26 @@ class UserInformationMenus extends StatelessWidget {
           var userName = userDocument['User_Name'];
 
           return Center(
-            child: Text(
-              'Login User : $userName',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Login User : $userName',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 16), // 適宜間隔を設定
+                ElevatedButton(
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut(); // ログアウト
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginPage()),
+                      (route) => false,
+                    );
+                  },
+                  child: Text('ログアウト'),
+                ),
+              ],
             ),
           );
         },

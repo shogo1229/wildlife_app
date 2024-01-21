@@ -20,6 +20,9 @@ class UserProvider extends ChangeNotifier {
   User? getUser() {
     return _user;
   }
+
+  String getUserId() =>
+      _user?.uid ?? ''; // Add this method to get userId as String
 }
 
 void main() async {

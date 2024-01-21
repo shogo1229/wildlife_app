@@ -55,7 +55,7 @@ class UserInformationMenus extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(width: 16), // 適宜間隔を設定
-                ElevatedButton(
+                IconButton(
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut(); // ログアウト
                     Navigator.pushAndRemoveUntil(
@@ -64,7 +64,7 @@ class UserInformationMenus extends StatelessWidget {
                       (route) => false,
                     );
                   },
-                  child: Text('ログアウト'),
+                  icon: Icon(Icons.exit_to_app),
                 ),
               ],
             ),

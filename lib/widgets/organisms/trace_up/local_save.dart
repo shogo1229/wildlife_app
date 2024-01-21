@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 
 // 写真データのクラス
@@ -240,7 +241,7 @@ class _Local_CameraState extends State<Local_Camera> {
   final ImagePicker _picker = ImagePicker(); // 画像選択ライブラリ
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance; // Firebase Firestore
-  late int _selectedUserId; // 選択されたユーザーのID
+  late String _selectedUserId; // 選択されたユーザーのID
 
   String getTraceType(String traceType) {
     switch (traceType) {
@@ -275,7 +276,8 @@ class _Local_CameraState extends State<Local_Camera> {
   @override
   void initState() {
     super.initState();
-    _selectedUserId = context.read<UserIdProvider>().selectedUserId;
+    _selectedUserId =
+        context.read<UserProvider>().getUserId(); // Get userId as String
   }
 
   @override
@@ -452,7 +454,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // 動物のポイントを更新する関数
-  Future<void> _updateAnimalPoints(int userId, String animalType) async {
+  Future<void> _updateAnimalPoints(String userId, String animalType) async {
     try {
       var querySnapshot = await FirebaseFirestore.instance
           .collection('User_Information')
@@ -479,7 +481,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // ユーザーの総ポイントを更新する関数
-  Future<void> _updateUserTotalPoints(int userId, int numberOfPhotos) async {
+  Future<void> _updateUserTotalPoints(String userId, int numberOfPhotos) async {
     try {
       var querySnapshot = await FirebaseFirestore.instance
           .collection('User_Information')
@@ -518,7 +520,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
   // Firestoreに写真情報を保存する関数
   Future<void> _saveToFirestore(Position position, String imageUrl,
-      String animalType, String memo, int selectedUserId) async {
+      String animalType, String memo, String selectedUserId) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,

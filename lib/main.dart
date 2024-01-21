@@ -1,39 +1,42 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-
-// Your existing imports
+import 'package:wildlife_app/pages/login.dart';
+import 'package:wildlife_app/pages/home.dart'; // ホームページのファイルをインポート
 import 'package:wildlife_app/util/firebase_options.dart';
-import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
-import 'package:wildlife_app/widgets/organisms/login/signup_form.dart';
-import '../pages/home.dart';
 
+// ユーザーの認証情報を提供するプロバイダークラス
 class UserProvider extends ChangeNotifier {
   User? _user;
 
+  // ユーザーをセットしてリスナーに通知
   void setUser(User user) {
     _user = user;
     notifyListeners();
   }
 
+  // 現在のユーザーオブジェクトを取得
   User? getUser() {
     return _user;
   }
 
-  String getUserId() =>
-      _user?.uid ?? ''; // Add this method to get userId as String
+  // 現在のユーザーのUIDを文字列として取得するメソッドを追加
+  String getUserId() => _user?.uid ?? '';
 }
 
+// アプリケーションのエントリーポイント
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Firebaseの初期化
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // プロバイダーを使用して状態を管理するためのMultiProvider
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => UserIdProvider()),
         ChangeNotifierProvider(create: (context) => UserProvider()),
       ],
       child: MyApp(),
@@ -41,123 +44,47 @@ void main() async {
   );
 }
 
+// アプリケーション全体の設定
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home:
+          AuthenticationWrapper(), // 認証の状態によって表示する画面を決定するAuthenticationWrapper
     );
   }
 }
 
-class LoginPage extends StatefulWidget {
-  @override
-  _LoginPageState createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  String _email = '';
-  String _password = '';
-
-  Future<void> _showErrorDialog(String message) async {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Error'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+// AuthenticationWrapperクラス内のbuildメソッドの一部
+class AuthenticationWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'メールアドレス'),
-                onChanged: (String value) {
-                  setState(() {
-                    _email = value;
-                  });
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'パスワード'),
-                obscureText: true,
-                onChanged: (String value) {
-                  setState(() {
-                    _password = value;
-                  });
-                },
-              ),
-              ElevatedButton(
-                child: const Text('ユーザ登録'),
-                onPressed: () async {
-                  try {
-                    final User? user = (await FirebaseAuth.instance
-                            .createUserWithEmailAndPassword(
-                                email: _email, password: _password))
-                        .user;
-                    if (user != null) {
-                      print("ユーザ登録しました ${user.email} , ${user.uid}");
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => RegistrationPage(),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    print(e);
-                    _showErrorDialog("ユーザー登録エラー: $e");
-                  }
-                },
-              ),
-              ElevatedButton(
-                child: const Text('ログイン'),
-                onPressed: () async {
-                  try {
-                    final User? user = (await FirebaseAuth.instance
-                            .signInWithEmailAndPassword(
-                                email: _email, password: _password))
-                        .user;
-                    if (user != null) {
-                      Provider.of<UserProvider>(context, listen: false)
-                          .setUser(user);
-                      print("ログインしました　${user.email} , ${user.uid}");
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => HomePage(),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    print(e);
-                    _showErrorDialog("$e");
-                  }
-                },
-              ),
+    // UserProviderの状態を取得
+    final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.getUser();
 
-              // Other buttons and UI elements
-            ],
-          ),
-        ),
-      ),
+    return StreamBuilder<User?>(
+      // Firebase Authenticationの状態変更をリッスン
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          // Firebase Authenticationの状態が変更されたときに呼ばれる
+          final firebaseUser = snapshot.data;
+
+          if (firebaseUser != null) {
+            // Firebaseにログイン済みの場合はUserProviderにセット
+            userProvider.setUser(firebaseUser);
+            print("ログイン済みです${firebaseUser.email} , ${firebaseUser.uid}");
+            return HomePage();
+          } else {
+            // ログインしていない場合はログイン画面を表示
+            return LoginPage();
+          }
+        }
+        // ConnectionStateがactive以外の場合は何も表示しない
+        return Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
     );
   }
 }

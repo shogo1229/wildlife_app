@@ -19,10 +19,6 @@ class UserInformationMenus extends StatelessWidget {
     User? user = Provider.of<UserProvider>(context).getUser();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Information'),
-        centerTitle: true,
-      ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('User_Information')

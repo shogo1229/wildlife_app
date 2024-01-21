@@ -42,9 +42,11 @@ class UserInformationMenus extends StatelessWidget {
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ListView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                _buildInfoCard('User Name', userDocument['User_Name']),
+                _buildUserNameCard(userDocument['User_Name']),
+                SizedBox(height: 16),
                 _buildInfoCard('Total Point', userDocument['total_point']),
                 _buildInfoCard('Boar Point', userDocument['Boar_Point']),
                 _buildInfoCard('Deer Point', userDocument['Deer_Point']),
@@ -57,13 +59,46 @@ class UserInformationMenus extends StatelessWidget {
     );
   }
 
+  Widget _buildUserNameCard(String userName) {
+    return Card(
+      elevation: 5,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(
+          'User Name',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          userName,
+          style: TextStyle(
+            fontSize: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoCard(String title, dynamic value) {
     return Card(
       elevation: 5,
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
-        title: Text(title),
-        subtitle: Text(value.toString()),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(
+          value.toString(),
+          style: TextStyle(
+            fontSize: 18,
+          ),
+        ),
       ),
     );
   }

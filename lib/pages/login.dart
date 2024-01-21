@@ -43,68 +43,105 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'メールアドレス'),
-                onChanged: (String value) {
-                  setState(() {
-                    _email = value;
-                  });
-                },
+              // Email TextFormField with Icon
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'メールアドレス',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.mail),
+                  ),
+                  onChanged: (String value) {
+                    setState(() {
+                      _email = value;
+                    });
+                  },
+                ),
               ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'パスワード'),
-                obscureText: true,
-                onChanged: (String value) {
-                  setState(() {
-                    _password = value;
-                  });
-                },
+
+              // Password TextFormField with Icon
+              Container(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'パスワード',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  obscureText: true,
+                  onChanged: (String value) {
+                    setState(() {
+                      _password = value;
+                    });
+                  },
+                ),
               ),
-              ElevatedButton(
-                child: const Text('ユーザ登録'),
-                onPressed: () async {
-                  try {
-                    final User? user = (await FirebaseAuth.instance
-                            .createUserWithEmailAndPassword(
-                                email: _email, password: _password))
-                        .user;
-                    if (user != null) {
-                      print("ユーザ登録しました ${user.email} , ${user.uid}");
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => RegistrationPage(),
-                        ),
-                      );
+
+              // Blue background, white text Login Button
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final User? user = (await FirebaseAuth.instance
+                              .signInWithEmailAndPassword(
+                                  email: _email, password: _password))
+                          .user;
+                      if (user != null) {
+                        Provider.of<UserProvider>(context, listen: false)
+                            .setUser(user);
+                        print("ログインしました　${user.email} , ${user.uid}");
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => HomePage(),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print(e);
+                      _showErrorDialog("$e");
                     }
-                  } catch (e) {
-                    print(e);
-                    _showErrorDialog("ユーザー登録エラー: $e");
-                  }
-                },
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.blue,
+                    onPrimary: Colors.white,
+                  ),
+                  child: const Text('ログイン'),
+                ),
               ),
-              ElevatedButton(
-                child: const Text('ログイン'),
-                onPressed: () async {
-                  try {
-                    final User? user = (await FirebaseAuth.instance
-                            .signInWithEmailAndPassword(
-                                email: _email, password: _password))
-                        .user;
-                    if (user != null) {
-                      Provider.of<UserProvider>(context, listen: false)
-                          .setUser(user);
-                      print("ログインしました　${user.email} , ${user.uid}");
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => HomePage(),
-                        ),
-                      );
+
+              // White background, blue text Signup Button
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      final User? user = (await FirebaseAuth.instance
+                              .createUserWithEmailAndPassword(
+                                  email: _email, password: _password))
+                          .user;
+                      if (user != null) {
+                        print("ユーザ登録しました ${user.email} , ${user.uid}");
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => RegistrationPage(),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print(e);
+                      _showErrorDialog("ユーザー登録エラー: $e");
                     }
-                  } catch (e) {
-                    print(e);
-                    _showErrorDialog("$e");
-                  }
-                },
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: Colors.white,
+                    onPrimary: Colors.blue,
+                  ),
+                  child: const Text('ユーザ登録'),
+                ),
               ),
             ],
           ),

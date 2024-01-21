@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:wildlife_app/widgets/organisms/home/user_selection.dart'; // Add your correct import path
+import 'package:wildlife_app/main.dart';
 
 class UserInformationMenu extends StatelessWidget {
   @override
@@ -15,13 +16,13 @@ class UserInformationMenu extends StatelessWidget {
 class UserInformationMenus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final _selectedUserId = context.watch<UserIdProvider>().selectedUserId;
+    User? user = Provider.of<UserProvider>(context).getUser();
 
     return Scaffold(
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('User_Information')
-            .where('User_ID', isEqualTo: _selectedUserId)
+            .where('User_ID', isEqualTo: user?.uid)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -43,7 +44,7 @@ class UserInformationMenus extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: ListView(
               children: <Widget>[
-                _buildInfoCard('User ID', userDocument['User_ID']),
+                _buildInfoCard('User Name', userDocument['User_Name']),
                 _buildInfoCard('Total Point', userDocument['total_point']),
                 _buildInfoCard('Boar Point', userDocument['Boar_Point']),
                 _buildInfoCard('Deer Point', userDocument['Deer_Point']),

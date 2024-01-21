@@ -24,12 +24,14 @@ class WildlifeRanking {
 
 class UserRank {
   final String user_id;
+  final String user_name;
   final int boarPoint;
   final int deerPoint;
   final int totalPoint;
 
   UserRank({
     required this.user_id,
+    required this.user_name,
     required this.boarPoint,
     required this.deerPoint,
     required this.totalPoint,
@@ -39,6 +41,7 @@ class UserRank {
   factory UserRank.fromDocument(QueryDocumentSnapshot doc) {
     return UserRank(
       user_id: doc['User_ID'],
+      user_name: doc['User_Name'],
       boarPoint: doc['Boar_Point'],
       deerPoint: doc['Deer_Point'],
       totalPoint: doc['total_point'],

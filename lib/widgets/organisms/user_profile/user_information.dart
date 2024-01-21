@@ -44,18 +44,20 @@ class UserInformationMenus extends StatelessWidget {
           var userDocument =
               snapshot.data?.docs.first.data() as Map<String, dynamic>;
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _buildUserNameCard(context, userDocument['User_Name']),
-                SizedBox(height: 16),
-                _buildInfoCard('Total Point', userDocument['total_point']),
-                _buildInfoCard('Boar Point', userDocument['Boar_Point']),
-                _buildInfoCard('Deer Point', userDocument['Deer_Point']),
-                _buildInfoCard('Other Point', userDocument['Other_Point']),
-              ],
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _buildUserNameCard(context, userDocument['User_Name']),
+                  SizedBox(height: 16),
+                  _buildInfoCard('Total Point', userDocument['total_point']),
+                  _buildInfoCard('Boar Point', userDocument['Boar_Point']),
+                  _buildInfoCard('Deer Point', userDocument['Deer_Point']),
+                  _buildInfoCard('Other Point', userDocument['Other_Point']),
+                ],
+              ),
             ),
           );
         },
@@ -96,10 +98,10 @@ class UserInformationMenus extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit User Name'),
+          title: Text('ユーザ名を変更します'),
           content: TextField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: 'New Name'),
+            decoration: InputDecoration(labelText: '新しいユーザー名を入力してください'),
           ),
           actions: <Widget>[
             TextButton(
@@ -109,7 +111,7 @@ class UserInformationMenus extends StatelessWidget {
               },
             ),
             TextButton(
-              child: Text('Save'),
+              child: Text('保存'),
               onPressed: () async {
                 String newName = _nameController.text.trim();
                 if (newName.isNotEmpty) {

@@ -169,6 +169,8 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
   // 選択が完了しダイアログを閉じる処理
   void _completeSelection(BuildContext context) {
     _selectedUserId = context.read<UserProvider>().getUserId();
+    print(
+        'Complete Selection: $_animalType, $_traceType, ${_memoController.text}, $_selectedUserId');
     Navigator.of(context).pop({
       'animalType': _animalType,
       'traceType': _traceType,
@@ -181,7 +183,6 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
 // アップロード進捗を表示する Stateful Widget
 class UploadProgressModal extends StatefulWidget {
   final String message;
-
   UploadProgressModal({required this.message});
 
   @override

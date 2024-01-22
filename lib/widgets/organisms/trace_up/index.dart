@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/molecules/trace_up/footer.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/camera_main.dart';
+import 'package:wildlife_app/widgets/organisms/trace_up/local_camera.dart';
 
 class TraceUpIndex extends StatelessWidget {
   @override
@@ -9,7 +10,7 @@ class TraceUpIndex extends StatelessWidget {
       children: <Widget>[
         Expanded(
           flex: 9,
-          child: Call_LocalCamera(),
+          child: LocalCamera(),
         ),
         Expanded(
           flex: 1,

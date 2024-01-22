@@ -346,11 +346,25 @@ class _Local_CameraState extends State<Local_Camera> {
             children: [
               ElevatedButton(
                 onPressed: _takePicture,
-                child: Text('写真を撮る'),
+                child: Row(
+                  children: [
+                    Icon(Icons.camera), // Add camera icon
+                    SizedBox(
+                        width: 8), // Add some space between the icon and text
+                    Text('痕跡を撮影'),
+                  ],
+                ),
               ),
               ElevatedButton(
                 onPressed: _uploadImages,
-                child: Text('画像をアップロード'),
+                child: Row(
+                  children: [
+                    Icon(Icons.upload), // Add upload icon
+                    SizedBox(
+                        width: 8), // Add some space between the icon and text
+                    Text('アップロード'),
+                  ],
+                ),
               ),
             ],
           ),

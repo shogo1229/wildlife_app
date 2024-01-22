@@ -43,7 +43,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
   String? _traceType; // 選択された痕跡の種類
   TextEditingController _memoController =
       TextEditingController(); // メモのテキストエディティングコントローラ
-  int? _selectedUserId; // 選択されたユーザーのID
+  String? _selectedUserId; // 選択されたユーザーのID
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +191,7 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
 
   // 選択が完了しダイアログを閉じる処理
   void _completeSelection(BuildContext context) {
-    _selectedUserId = context.read<UserIdProvider>().selectedUserId;
+    _selectedUserId = context.read<UserProvider>().getUserId();
     Navigator.of(context).pop({
       'animalType': _animalType,
       'traceType': _traceType,
@@ -296,37 +296,47 @@ class _Local_CameraState extends State<Local_Camera> {
               ),
               itemCount: _images.length,
               itemBuilder: (context, index) {
-                return Column(
-                  children: [
-                    GridTile(
-                      child: Expanded(
-                        child: Image.file(_images[index].image),
-                      ),
-                    ),
-                    ListTile(
-                      title: Text(
-                        '獣種: ${getAnimalType(_images[index].animalType)}',
-                        style: TextStyle(fontSize: 12.0),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '痕跡種: ${getTraceType(_images[index].traceType)}',
-                            style: TextStyle(fontSize: 12.0),
+                return Card(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(5),
+                          child: Image.file(
+                            _images[index].image,
+                            fit: BoxFit.cover,
                           ),
-                          Text(
-                            '緯度: ${_images[index].position.latitude}',
-                            style: TextStyle(fontSize: 10.0),
-                          ),
-                          Text(
-                            '経度: ${_images[index].position.longitude}',
-                            style: TextStyle(fontSize: 10.0),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      ListTile(
+                        title: Row(
+                          children: [
+                            Icon(Icons.pets), // Add animal icon
+                            SizedBox(width: 4.0),
+                            Text(
+                              '獣種: ${getAnimalType(_images[index].animalType)}',
+                              style: TextStyle(fontSize: 10.0),
+                            ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.pets), // Add trace icon
+                                SizedBox(width: 4.0),
+                                Text(
+                                  '痕跡種: ${getTraceType(_images[index].traceType)}',
+                                  style: TextStyle(fontSize: 10.0),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),

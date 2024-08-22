@@ -1,5 +1,5 @@
-// local_camera.dart
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,6 +11,8 @@ import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart'; // 追加
+import 'package:flutter/services.dart'; // 追加
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -30,7 +32,7 @@ class _Local_CameraState extends State<Local_Camera> {
     _selectedUserId = context.read<UserProvider>().getUserId(); // Get userId as String
   }
 
-    String getTraceType(String traceType) {
+  String getTraceType(String traceType) {
     switch (traceType) {
       case 'trace_footprint':
         return '足跡';
@@ -43,7 +45,6 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  // You may also want to ensure the getAnimalType method is present
   String getAnimalType(String animalType) {
     switch (animalType) {
       case 'Boar':
@@ -221,8 +222,18 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
-      Position position = await _getCurrentLocation();
-      await _showAnimalTypeMemoDialog(File(imageFile.path), position);
+      // Convert the image file to bytes
+      final bytes = await imageFile.readAsBytes();
+
+      // Save the image to the device's gallery
+      final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
+
+      if (result['isSuccess']) {
+        Position position = await _getCurrentLocation();
+        await _showAnimalTypeMemoDialog(File(imageFile.path), position);
+      } else {
+        print('Error saving image to gallery');
+      }
     }
   }
 

@@ -329,18 +329,15 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   }
 }
 
-// ローカルカメラ機能を担当するメインページの Stateful Widget
 class Local_Camera extends StatefulWidget {
   @override
   _Local_CameraState createState() => _Local_CameraState();
 }
 
-// Local_Cameraの State クラス
 class _Local_CameraState extends State<Local_Camera> {
   static List<PhotoData> _pendingUploadImages = []; // アップロード待ちの写真データのリスト
   final ImagePicker _picker = ImagePicker(); // 画像選択ライブラリ
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance; // Firebase Firestore
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firebase Firestore
   late String _selectedUserId; // 選択されたユーザーのID
   bool _isUploading = false; // アップロード中かどうかを示すフラグ
 
@@ -373,8 +370,7 @@ class _Local_CameraState extends State<Local_Camera> {
   @override
   void initState() {
     super.initState();
-    _selectedUserId =
-        context.read<UserProvider>().getUserId(); // Get userId as String
+    _selectedUserId = context.read<UserProvider>().getUserId(); // Get userId as String
   }
 
   @override
@@ -391,52 +387,43 @@ class _Local_CameraState extends State<Local_Camera> {
         child: Column(
           children: [
             Expanded(
-              child: GridView.builder(
-                // GridView内で写真を表示
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 4.0,
-                  mainAxisSpacing: 4.0,
-                ),
+              child: ListView.builder(
                 itemCount: _pendingUploadImages.length,
                 itemBuilder: (context, index) {
                   return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Column(
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(5),
-                            child: Image.file(
-                              _pendingUploadImages[index].image,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
                         ListTile(
-                          title: Row(
-                            children: [
-                              Icon(Icons.pets), // Add animal icon
-                              SizedBox(width: 4.0),
-                              Text(
-                                '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
-                                style: TextStyle(fontSize: 10.0),
-                              ),
-                            ],
+                          leading: Image.file(
+                            _pendingUploadImages[index].image,
+                            width: 100.0,
+                            height: 200.0,
+                            fit: BoxFit.cover,
+                          ),
+                          title: Text(
+                            '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
+                            style: TextStyle(fontSize: 14.0),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.pets), // Add trace icon
-                                  SizedBox(width: 4.0),
-                                  Text(
-                                    '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
-                                    style: TextStyle(fontSize: 10.0),
-                                  ),
-                                ],
+                              Text(
+                                '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
+                                style: TextStyle(fontSize: 14.0),
+                              ),
+                              SizedBox(height: 8.0),
+                              Text(
+                                'メモ: ${_pendingUploadImages[index].memo}',
+                                style: TextStyle(fontSize: 14.0),
                               ),
                             ],
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.edit, color: Colors.green),
+                            onPressed: () {
+                              _editPhotoData(index);
+                            },
                           ),
                         ),
                       ],
@@ -453,8 +440,7 @@ class _Local_CameraState extends State<Local_Camera> {
                   child: Row(
                     children: [
                       Icon(Icons.camera), // Add camera icon
-                      SizedBox(
-                          width: 8), // Add some space between the icon and text
+                      SizedBox(width: 8), // Add some space between the icon and text
                       Text('痕跡を撮影'),
                     ],
                   ),
@@ -483,6 +469,23 @@ class _Local_CameraState extends State<Local_Camera> {
         ),
       ),
     );
+  }
+
+  Future<void> _editPhotoData(int index) async {
+    Map<String, dynamic>? result = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
+      },
+    );
+
+    if (result != null) {
+      setState(() {
+        _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
+        _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
+        _pendingUploadImages[index].memo = result['memo'] ?? '';
+      });
+    }
   }
 
   // 写真を撮影し AnimalTypeMemoWizard を表示する関数
@@ -519,7 +522,6 @@ class _Local_CameraState extends State<Local_Camera> {
       });
     }
   }
-
 
   // 画像をアップロードしポイントを更新する関数
   Future<void> _uploadImages() async {

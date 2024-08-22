@@ -7,6 +7,7 @@ class UserProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween, // これを追加
       children: <Widget>[
         Expanded(
           flex: 8, // adjust the flex values as needed

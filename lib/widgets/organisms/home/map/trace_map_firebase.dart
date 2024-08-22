@@ -213,7 +213,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('現在地に戻る'),
+              child: Text('現在地に移動'),
             ),
           ],
         ),

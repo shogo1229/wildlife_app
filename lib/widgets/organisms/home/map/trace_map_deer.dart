@@ -195,7 +195,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Deer> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('Warp to Current Location'),
+              child: Text('現在地に移動'),
             ),
           ],
         ),

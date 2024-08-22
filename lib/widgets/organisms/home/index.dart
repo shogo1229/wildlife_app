@@ -24,9 +24,9 @@ class _HomeState extends State<Home> {
                 Colors.grey, // Set the text color for unselected tabs
             indicatorColor: Colors.grey, // Set the color of the indicator
             tabs: [
-              Tab(text: 'Total'),
-              Tab(text: 'Boar'),
-              Tab(text: 'Deer'),
+              Tab(text: '全て表示'),
+              Tab(text: 'イノシシ'),
+              Tab(text: 'ニホンジカ'),
             ],
           ),
           Expanded(

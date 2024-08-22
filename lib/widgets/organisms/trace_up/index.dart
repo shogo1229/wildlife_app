@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/widgets/molecules/trace_up/footer.dart';
-import 'package:wildlife_app/widgets/organisms/trace_up/local_save.dart';
+import 'package:wildlife_app/widgets/organisms/trace_up/local_camera.dart';
 
 class TraceUpIndex extends StatelessWidget {
   @override

@@ -6,7 +6,7 @@ class UserProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('UserProfilePage'),
+        title: Text('ユーザ情報'),
       ),
       body: UserProfile(),
     );

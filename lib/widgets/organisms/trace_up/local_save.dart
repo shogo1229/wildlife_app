@@ -16,6 +16,7 @@ class PhotoData {
   String memo;
   Position position;
   String traceType;
+  String elapsedForTrace;
 
   PhotoData({
     required this.image,
@@ -24,6 +25,7 @@ class PhotoData {
     required this.memo,
     required this.position,
     required this.traceType,
+    required this.elapsedForTrace,
   });
 }
 
@@ -40,6 +42,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   int _currentStep = 0;
   String? _animalType;
   String? _traceType;
+  String? _elapsedForTrace;
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
@@ -63,6 +66,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       'animalType': _animalType,
       'traceType': _traceType,
       'memo': _memoController.text,
+      'elapsed_for_trace': _elapsedForTrace,
     });
   }
 
@@ -170,9 +174,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               spacing: 20.0,
               runSpacing: 20.0,
               children: [
-                _buildTraceTypeButton('足跡', 'animal_footprint', Icons.pets),
-                _buildTraceTypeButton('糞', 'animal_dropping', Icons.delete),
-                _buildTraceTypeButton('その他', 'animal_others', Icons.park),
+                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets),
+                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete),
+                _buildTraceTypeButton('その他', 'trace_others', Icons.park),
               ],
             ),
           ),
@@ -185,6 +189,17 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          '何日前の痕跡？',
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 10.0),
+        _buildElapsedForTraceSelection(),
+        SizedBox(height: 20.0),
         Text(
           '備考を入力してください',
           style: TextStyle(
@@ -295,6 +310,49 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
+  Widget _buildElapsedForTraceSelection() {
+    return Column(
+      children: [
+        ListTile(
+          title: Text('真新しい'),
+          leading: Radio<String>(
+            value: 'flesh',
+            groupValue: _elapsedForTrace,
+            onChanged: (String? value) {
+              setState(() {
+                _elapsedForTrace = value;
+              });
+            },
+          ),
+        ),
+        ListTile(
+          title: Text('2~3日経過'),
+          leading: Radio<String>(
+            value: 'middle',
+            groupValue: _elapsedForTrace,
+            onChanged: (String? value) {
+              setState(() {
+                _elapsedForTrace = value;
+              });
+            },
+          ),
+        ),
+        ListTile(
+          title: Text('古い'),
+          leading: Radio<String>(
+            value: 'old',
+            groupValue: _elapsedForTrace,
+            onChanged: (String? value) {
+              setState(() {
+                _elapsedForTrace = value;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildNavigationButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -343,11 +401,11 @@ class _Local_CameraState extends State<Local_Camera> {
 
   String getTraceType(String traceType) {
     switch (traceType) {
-      case 'animal_footprint':
+      case 'trace_footprint':
         return '足跡';
-      case 'animal_dropping':
+      case 'trace_dropping':
         return '糞';
-      case 'animal_others':
+      case 'trace_others':
         return 'その他';
       default:
         return 'Unknown'; // Handle unknown trace types if needed
@@ -497,6 +555,7 @@ class _Local_CameraState extends State<Local_Camera> {
         _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
         _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
         _pendingUploadImages[index].memo = result['memo'] ?? '';
+        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
       });
     }
   }
@@ -554,6 +613,7 @@ class _Local_CameraState extends State<Local_Camera> {
       String animalType = result['animalType'] ?? 'error';
       String traceType = result['traceType'] ?? 'error';
       String memo = result['memo'];
+      String elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
 
       setState(() {
         _pendingUploadImages.add(PhotoData(
@@ -563,6 +623,7 @@ class _Local_CameraState extends State<Local_Camera> {
           traceType: traceType,
           memo: memo,
           position: position,
+          elapsedForTrace: elapsedForTrace,
         ));
       });
     }
@@ -592,7 +653,7 @@ class _Local_CameraState extends State<Local_Camera> {
     for (var data in imagesCopy) {
       try {
         data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
-        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, _selectedUserId);
+        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
 
@@ -689,7 +750,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
   // Firestoreに写真情報を保存する関数
   Future<void> _saveToFirestore(Position position, String imageUrl,
-      String animalType, String memo, String selectedUserId) async {
+      String animalType, String memo, String elapsedForTrace, String traceType,String selectedUserId) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
@@ -697,6 +758,8 @@ class _Local_CameraState extends State<Local_Camera> {
       'timestamp': DateTime.now(),
       'AnimalType': animalType,
       'Memo': memo,
+      'ElapsedForTrace': elapsedForTrace,
+      'TraceType': traceType,
       'User_ID': selectedUserId,
     });
   }
@@ -741,3 +804,4 @@ class _UploadProgressModalState extends State<UploadProgressModal> {
     );
   }
 }
+

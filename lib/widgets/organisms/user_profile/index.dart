@@ -9,7 +9,7 @@ class UserProfile extends StatelessWidget {
     return Column(
       children: <Widget>[
         Expanded(
-          flex: 9, // adjust the flex values as needed
+          flex: 8, // adjust the flex values as needed
           child: UserInformationMenus(),
         ),
         Expanded(

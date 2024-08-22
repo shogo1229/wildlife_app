@@ -1,17 +1,17 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:wildlife_app/widgets/organisms/home/firebase/get_firebase_model.dart';
 
-void main() => runApp(MaterialApp(home: FlutterMAP_Boar()));
-
-class FlutterMAP_Boar extends StatefulWidget {
+class FlutterMAP_Deer extends StatefulWidget {
   @override
   _FlutterMapWithLocationState createState() => _FlutterMapWithLocationState();
 }
 
-class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
+class _FlutterMapWithLocationState extends State<FlutterMAP_Deer> {
   final MapController mapController = MapController();
   LatLng currentLocation = LatLng(0, 0);
   String currentLocationText = 'Loading...';
@@ -24,26 +24,20 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
   void initState() {
     super.initState();
     getLocation().then((_) {
-      if (mounted) {
-        setState(() {
-          mapController.move(currentLocation, 16.0);
-        });
-      }
+      mapController.move(currentLocation, 16.0);
     });
 
-    firebaseModel.fetchFirebase_data();
+    fetchUserSpecificData(); // Fetch data with User_ID
 
     location.onLocationChanged.listen((LocationData? newLocation) {
-      if (mounted) {
-        setState(() {
-          if (newLocation != null) {
-            currentLocation =
-                LatLng(newLocation.latitude!, newLocation.longitude!);
-            currentLocationText =
-                '緯度: ${newLocation.latitude}, 経度: ${newLocation.longitude}';
-          }
-        });
-      }
+      setState(() {
+        if (newLocation != null) {
+          currentLocation =
+              LatLng(newLocation.latitude!, newLocation.longitude!);
+          currentLocationText =
+              'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
+        }
+      });
     });
   }
 
@@ -52,22 +46,27 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
     try {
       _locationData = await location.getLocation();
     } catch (e) {
-      print('位置情報の取得に失敗しました: $e');
+      print('Failed to get location: $e');
     }
 
     if (_locationData != null) {
-      if (mounted) {
-        setState(() {
-          currentLocation =
-              LatLng(_locationData!.latitude!, _locationData.longitude!);
-        });
-      }
+      setState(() {
+        currentLocation =
+            LatLng(_locationData!.latitude!, _locationData.longitude!);
+      });
+    }
+  }
+
+  Future<void> fetchUserSpecificData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await firebaseModel.fetchFirebase_data(user.uid); // Pass the user ID to fetchFirebase_data
     }
   }
 
   List<Marker> getFilteredMarkers() {
     return firebaseModel.firebase_data
-        .where((data) => data.animalType == 'Boar')
+        .where((data) => data.animalType == 'Deer')
         .map((data) => Marker(
               point: LatLng(data.latitude, data.longitude),
               width: 40,
@@ -106,7 +105,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                                       ),
                                       SizedBox(height: 16),
                                       Text(
-                                        '動物の種類: ${data.animalType}',
+                                        'Animal Type: ${data.animalType}',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -114,12 +113,12 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        '緯度: ${data.latitude}',
+                                        'Latitude: ${data.latitude}',
                                         style: TextStyle(fontSize: 16),
                                       ),
                                       SizedBox(height: 8),
                                       Text(
-                                        '経度: ${data.longitude}',
+                                        'Longitude: ${data.longitude}',
                                         style: TextStyle(fontSize: 16),
                                       ),
                                       SizedBox(height: 16),
@@ -141,7 +140,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                   );
                 },
                 child: Image.asset(
-                  'lib/assets/images/Boar_pin_Normal.png',
+                  'lib/assets/images/Deer_pin_Normal.png',
                   width: 40,
                   height: 40,
                 ),
@@ -196,7 +195,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
             ),
             ElevatedButton(
               onPressed: warpToCurrentLocation,
-              child: Text('現在地に移動'),
+              child: Text('Warp to Current Location'),
             ),
           ],
         ),

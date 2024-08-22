@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/molecules/home/footer.dart';
-import 'package:wildlife_app/widgets/organisms/home/trace_map.dart';
-import 'package:wildlife_app/widgets/organisms/home/get_userUID.dart';
+import 'package:wildlife_app/widgets/organisms/home/map/trace_map_boar.dart';
+import 'package:wildlife_app/widgets/organisms/home/map/trace_map_deer.dart';
+import 'package:wildlife_app/widgets/organisms/home/map/trace_map_firebase.dart';
+
+
 
 class Home extends StatefulWidget {
   @override
@@ -9,24 +12,39 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int selectedUserId = 0;
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Expanded(
-          flex: 1,
-          child: GetUserName(),
-        ),
-        Expanded(
-          flex: 8,
-          child: FlutterMapFireBase(),
-        ),
-        Expanded(
-          flex: 1,
-          child: HomeFooter(),
-        ),
-      ],
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: <Widget>[
+          const TabBar(
+            labelColor: Colors.black, // Set the text color for selected tab
+            unselectedLabelColor:
+                Colors.grey, // Set the text color for unselected tabs
+            indicatorColor: Colors.grey, // Set the color of the indicator
+            tabs: [
+              Tab(text: 'Total'),
+              Tab(text: 'Boar'),
+              Tab(text: 'Deer'),
+            ],
+          ),
+          Expanded(
+            flex: 6,
+            child: TabBarView(
+              children: [
+                FlutterMapFireBase(),
+                FlutterMAP_Boar(),
+                FlutterMAP_Deer(),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: HomeFooter(),
+          ),
+        ],
+      ),
     );
   }
 }

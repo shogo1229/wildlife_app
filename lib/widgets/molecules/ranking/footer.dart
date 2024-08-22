@@ -4,7 +4,6 @@ import '../../atoms/footerButton.dart';
 import '../../../pages/ranking.dart';
 import '../../../pages/user_profile.dart';
 import '../../../pages/trace_up.dart';
-import '../../../pages/trace_map.dart';
 
 class RankingFooter extends StatelessWidget {
   @override
@@ -24,11 +23,6 @@ class RankingFooter extends StatelessWidget {
               icon: '📷',
               enabled: true,
               page: TraceUpPage(), // Specify the page for '📷'
-            ),
-            NavigationButton(
-              icon: '🗾',
-              enabled: true,
-              page: TraceMapPage(), // Specify the page for '🗾'
             ),
             NavigationButton(
               icon: '🥇',

@@ -1,7 +1,7 @@
 // app.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
+import 'package:wildlife_app/widgets/organisms/home/firebase/get_firebase_model.dart';
 
 class GetFirebase extends StatelessWidget {
   @override

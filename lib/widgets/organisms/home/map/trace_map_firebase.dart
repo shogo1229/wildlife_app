@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:wildlife_app/widgets/organisms/trace_map/get_firebase_model.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:wildlife_app/widgets/organisms/home/firebase/get_firebase_model.dart';
 
 void main() => runApp(MaterialApp(home: FlutterMapFireBase()));
 
@@ -26,7 +27,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
     getLocation().then((_) {
       mapController.move(currentLocation, 16.0);
     });
-    firebaseModel.fetchFirebase_data();
+    fetchUserSpecificData(); // Fetch data with User_ID
 
     location.onLocationChanged.listen((LocationData? newLocation) {
       setState(() {
@@ -53,6 +54,13 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
         currentLocation =
             LatLng(_locationData!.latitude!, _locationData.longitude!);
       });
+    }
+  }
+
+  Future<void> fetchUserSpecificData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await firebaseModel.fetchFirebase_data(user.uid); // Pass the user ID to fetchFirebase_data
     }
   }
 

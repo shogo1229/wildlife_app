@@ -8,18 +8,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
-import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:geolocator/geolocator.dart';
 
-// 写真データのクラス
 class PhotoData {
   File image;
   String imageUrl;
   String animalType;
   String memo;
   Position position;
-  String traceType; // 痕跡の種類のフィールド
+  String traceType;
 
   PhotoData({
     required this.image,
@@ -31,7 +27,6 @@ class PhotoData {
   });
 }
 
-// 動物の種類とメモを選択するウィザード形式の Stateful Widget
 class AnimalTypeMemoWizard extends StatefulWidget {
   final File image;
 
@@ -43,11 +38,10 @@ class AnimalTypeMemoWizard extends StatefulWidget {
 
 class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   int _currentStep = 0;
-  String? _animalType; // 選択された動物の種類
-  String? _traceType; // 選択された痕跡の種類
-  TextEditingController _memoController = TextEditingController(); // メモのテキストエディティングコントローラ
+  String? _animalType;
+  String? _traceType;
+  TextEditingController _memoController = TextEditingController();
 
-  // ステップを次に進める
   void _nextStep() {
     if (_currentStep < 2) {
       setState(() {
@@ -56,7 +50,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     }
   }
 
-  // ステップを前に戻す
   void _previousStep() {
     if (_currentStep > 0) {
       setState(() {
@@ -65,7 +58,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     }
   }
 
-  // 選択が完了したらダイアログを閉じて結果を返す
   void _completeSelection(BuildContext context) {
     Navigator.of(context).pop({
       'animalType': _animalType,
@@ -79,19 +71,28 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     return Scaffold(
       appBar: AppBar(
         title: Text('痕跡の情報を入力'),
+        backgroundColor: Colors.green[800],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _buildCurrentStep(),
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
+            fit: BoxFit.cover, // 画面全体にフィットさせる
           ),
-          _buildNavigationButtons(),
-        ],
+        ),
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Expanded(
+              child: _buildCurrentStep(),
+            ),
+            _buildNavigationButtons(),
+          ],
+        ),
       ),
     );
   }
 
-  // 現在のステップに応じたウィジェットを構築する
   Widget _buildCurrentStep() {
     switch (_currentStep) {
       case 0:
@@ -105,92 +106,136 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     }
   }
 
-  // 動物の種類を選択するステップ
   Widget _buildAnimalTypeSelection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('動物の種類を選択してください'),
-        Wrap(
-          alignment: WrapAlignment.spaceEvenly,
-          children: [
-            _buildAnimalTypeButton('lib/assets/images/Boar.png', 'Boar'),
-            _buildAnimalTypeButton('lib/assets/images/Deer.png', 'Deer'),
-            _buildAnimalTypeButton('lib/assets/images/Other.png', 'Other'),
-          ],
+        Text(
+          '動物の種類を選択してください',
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 20.0),
+        Expanded(
+          child: Center(
+            child: Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 20.0,
+              runSpacing: 20.0,
+              children: [
+                _buildAnimalTypeButton('lib/assets/images/Boar.png', 'Boar'),
+                _buildAnimalTypeButton('lib/assets/images/Deer.png', 'Deer'),
+                _buildAnimalTypeButton('lib/assets/images/Other.png', 'Other'),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  // 痕跡の種類を選択するステップ
   Widget _buildTraceTypeSelection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('痕跡の種類を選択してください'),
-        Wrap(
-          alignment: WrapAlignment.spaceEvenly,
-          children: [
-            _buildTraceTypeButton('足跡', 'animal_footprint'),
-            _buildTraceTypeButton('糞', 'animal_dropping'),
-            _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping'),
-            _buildTraceTypeButton('角こすり跡', 'horn-rubbing'),
-            _buildTraceTypeButton('獣道', 'animal-trail'),
-          ],
+        Text(
+          '痕跡の種類を選択してください',
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 20.0),
+        Expanded(
+          child: Center(
+            child: Wrap(
+              alignment: WrapAlignment.spaceEvenly,
+              spacing: 20.0,
+              runSpacing: 20.0,
+              children: [
+                _buildTraceTypeButton('足跡', 'animal_footprint', Icons.pets),
+                _buildTraceTypeButton('糞', 'animal_dropping', Icons.delete),
+                _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping', Icons.park),
+                _buildTraceTypeButton('角こすり跡', 'horn-rubbing', Icons.handyman),
+                _buildTraceTypeButton('獣道', 'animal-trail', Icons.terrain),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  // 備考を入力するステップ
   Widget _buildMemoInput() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('備考を入力してください'),
-        TextField(
-          controller: _memoController,
-          decoration: InputDecoration(
-            labelText: '備考',
-            contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+        Text(
+          '備考を入力してください',
+          style: TextStyle(
+            fontSize: 20.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.green[800],
           ),
-          maxLines: 5,
+        ),
+        SizedBox(height: 20.0),
+        Expanded(
+          child: TextField(
+            controller: _memoController,
+            decoration: InputDecoration(
+              labelText: '備考',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              contentPadding: EdgeInsets.all(16.0),
+            ),
+            maxLines: null,
+            style: TextStyle(fontSize: 18.0),
+          ),
         ),
       ],
     );
   }
 
-  // 動物の種類ボタンを構築する関数
-  Widget _buildAnimalTypeButton(String? imagePath, String type) {
+  Widget _buildAnimalTypeButton(String imagePath, String type) {
     return GestureDetector(
       onTap: () => setState(() {
         _animalType = type;
       }),
       child: Container(
-        padding: EdgeInsets.all(8.0),
+        width: 120.0,
+        height: 140.0,
         decoration: BoxDecoration(
           border: Border.all(
-            color: _animalType == type ? Colors.red : Colors.grey,
+            color: _animalType == type ? Colors.green[800]! : Colors.grey,
             width: 2.0,
           ),
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(16.0),
           color: _animalType == type
-              ? Colors.grey.withOpacity(0.5)
+              ? Colors.green[100]
               : Colors.transparent,
         ),
-        margin: EdgeInsets.all(8.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            imagePath != null
-                ? Image.asset(
-                    imagePath,
-                    width: 80.0,
-                    height: 80.0,
-                    fit: BoxFit.cover,
-                  )
-                : Container(),
+            Image.asset(
+              imagePath,
+              width: 60.0,
+              height: 60.0,
+              fit: BoxFit.cover,
+            ),
             SizedBox(height: 8.0),
             Text(
               type,
-              style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: _animalType == type ? Colors.green[800] : Colors.black,
+              ),
             ),
           ],
         ),
@@ -198,34 +243,47 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
-  // 痕跡の種類ボタンを構築する関数
-  Widget _buildTraceTypeButton(String label, String type) {
+  Widget _buildTraceTypeButton(String label, String type, IconData icon) {
     return GestureDetector(
       onTap: () => setState(() {
         _traceType = type;
       }),
       child: Container(
-        padding: EdgeInsets.all(8.0),
+        width: 120.0,
+        height: 120.0,
         decoration: BoxDecoration(
           border: Border.all(
-            color: _traceType == type ? Colors.red : Colors.grey,
+            color: _traceType == type ? Colors.green[800]! : Colors.grey,
             width: 2.0,
           ),
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(16.0),
           color: _traceType == type
-              ? Colors.grey.withOpacity(0.5)
+              ? Colors.green[100]
               : Colors.transparent,
         ),
-        margin: EdgeInsets.all(8.0),
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40.0,
+              color: _traceType == type ? Colors.green[800] : Colors.black,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: _traceType == type ? Colors.green[800] : Colors.black,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ナビゲーションボタンを構築する関数
   Widget _buildNavigationButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -234,10 +292,26 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           ElevatedButton(
             onPressed: _previousStep,
             child: Text('前へ'),
+            style: ElevatedButton.styleFrom(
+              padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+              textStyle: TextStyle(
+                fontSize: 30.0,
+              ),
+              primary: Colors.green[900], // 背景色
+              onPrimary: Colors.white,        // テキスト色
+            ),
           ),
         ElevatedButton(
           onPressed: _currentStep < 2 ? _nextStep : () => _completeSelection(context),
           child: Text(_currentStep < 2 ? '次へ' : '完了'),
+          style: ElevatedButton.styleFrom(
+            padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+            textStyle: TextStyle(
+              fontSize: 30.0,
+            ),
+            primary: Colors.green[900], // 背景色
+            onPrimary: Colors.white,        // テキスト色
+          ),
         ),
       ],
     );
@@ -299,91 +373,99 @@ class _Local_CameraState extends State<Local_Camera> {
   Widget build(BuildContext context) {
     // 画像を表示し、写真を撮影し、画像をアップロードするための UI
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: GridView.builder(
-              // GridView内で写真を表示
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 4.0,
-                mainAxisSpacing: 4.0,
-              ),
-              itemCount: _images.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(5),
-                          child: Image.file(
-                            _images[index].image,
-                            fit: BoxFit.cover,
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
+            fit: BoxFit.cover, // 画面全体にフィットさせる
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: GridView.builder(
+                // GridView内で写真を表示
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 4.0,
+                  mainAxisSpacing: 4.0,
+                ),
+                itemCount: _images.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(5),
+                            child: Image.file(
+                              _images[index].image,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                      ),
-                      ListTile(
-                        title: Row(
-                          children: [
-                            Icon(Icons.pets), // Add animal icon
-                            SizedBox(width: 4.0),
-                            Text(
-                              '獣種: ${getAnimalType(_images[index].animalType)}',
-                              style: TextStyle(fontSize: 10.0),
-                            ),
-                          ],
+                        ListTile(
+                          title: Row(
+                            children: [
+                              Icon(Icons.pets), // Add animal icon
+                              SizedBox(width: 4.0),
+                              Text(
+                                '獣種: ${getAnimalType(_images[index].animalType)}',
+                                style: TextStyle(fontSize: 10.0),
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.pets), // Add trace icon
+                                  SizedBox(width: 4.0),
+                                  Text(
+                                    '痕跡種: ${getTraceType(_images[index].traceType)}',
+                                    style: TextStyle(fontSize: 10.0),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.pets), // Add trace icon
-                                SizedBox(width: 4.0),
-                                Text(
-                                  '痕跡種: ${getTraceType(_images[index].traceType)}',
-                                  style: TextStyle(fontSize: 10.0),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _takePicture,
+                  child: Row(
+                    children: [
+                      Icon(Icons.camera), // Add camera icon
+                      SizedBox(
+                          width: 8), // Add some space between the icon and text
+                      Text('痕跡を撮影'),
                     ],
                   ),
-                );
-              },
+                ),
+                ElevatedButton(
+                  onPressed: _uploadImages,
+                  child: Row(
+                    children: [
+                      Icon(Icons.upload), // Add upload icon
+                      SizedBox(
+                          width: 8), // Add some space between the icon and text
+                      Text('アップロード'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: _takePicture,
-                child: Row(
-                  children: [
-                    Icon(Icons.camera), // Add camera icon
-                    SizedBox(
-                        width: 8), // Add some space between the icon and text
-                    Text('痕跡を撮影'),
-                  ],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: _uploadImages,
-                child: Row(
-                  children: [
-                    Icon(Icons.upload), // Add upload icon
-                    SizedBox(
-                        width: 8), // Add some space between the icon and text
-                    Text('アップロード'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

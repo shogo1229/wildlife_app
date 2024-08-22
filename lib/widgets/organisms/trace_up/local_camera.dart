@@ -132,36 +132,44 @@ class _Local_CameraState extends State<Local_Camera> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _takePicture,
-                  child: Row(
-                    children: [
-                      Icon(Icons.camera),
-                      SizedBox(width: 8),
-                      Text('痕跡を撮影'),
-                    ],
+                children: [
+                  ElevatedButton(
+                    onPressed: _takePicture,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[900],
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.camera),
+                        SizedBox(width: 8),
+                        Text('痕跡を撮影'),
+                      ],
+                    ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: _isUploading ? null : _uploadImages,  // アップロード中はボタンを無効化
-                  child: _isUploading
-                      ? Row(
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 8),
-                            Text('アップロード中...'),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Icon(Icons.upload),
-                            SizedBox(width: 8),
-                            Text('アップロード'),
-                          ],
-                        ),
-                ),
-              ],
+                  ElevatedButton(
+                    onPressed: _isUploading ? null : _uploadImages,  // アップロード中はボタンを無効化
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.green[900],
+                    ),
+                    child: _isUploading
+                        ? Row(
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(width: 8),
+                              Text('アップロード中...'),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Icon(Icons.upload),
+                              SizedBox(width: 8),
+                              Text('アップロード'),
+                            ],
+                          ),
+                  ),
+                ],
             ),
           ],
         ),

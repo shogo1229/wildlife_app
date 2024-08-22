@@ -211,10 +211,18 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                 ],
               ),
             ),
-            ElevatedButton(
-              onPressed: warpToCurrentLocation,
-              child: Text('現在地に移動'),
-            ),
+            SizedBox(
+              width: double.infinity, // ボタンを画面いっぱいに広げる
+              child: ElevatedButton(
+                onPressed: warpToCurrentLocation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.green[900],
+                ),
+                child: Text('現在地に移動'),
+              ),
+            )
+
           ],
         ),
       ),

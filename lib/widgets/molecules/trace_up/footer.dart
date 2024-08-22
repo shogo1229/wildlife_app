@@ -63,7 +63,7 @@ class NavigationButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         IconButton(
-          icon: Icon(icon, color: enabled ? Colors.grey : Colors.blue),
+          icon: Icon(icon, color: enabled ? Colors.grey : Colors.green[800]),
           onPressed: enabled
               ? () {
                   Navigator.push(
@@ -77,7 +77,7 @@ class NavigationButton extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: enabled ? Colors.grey : Colors.blue,
+            color: enabled ? Colors.grey : Colors.green[800],
           ),
         ),
       ],

@@ -117,4 +117,4 @@ flutter:
   fonts:
     - family: Noto Sans JP
       fonts:
-        - asset: fonts/NotoSansJP-Regular.ttf
+        - asset: fonts/NotoSansJP-Light.ttf

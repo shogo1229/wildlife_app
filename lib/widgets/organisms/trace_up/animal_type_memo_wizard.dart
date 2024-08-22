@@ -135,7 +135,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '痕跡の種類を選択してください',
           style: TextStyle(
-            fontSize: 20.0,
+            fontSize: 18.0,
             fontWeight: FontWeight.bold,
             color: Colors.green[800],
           ),
@@ -166,7 +166,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '何日前の痕跡？',
           style: TextStyle(
-            fontSize: 20.0,
+            fontSize: 18.0,
             fontWeight: FontWeight.bold,
             color: Colors.green[800],
           ),
@@ -175,7 +175,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         _buildElapsedForTraceSelection(),
         SizedBox(height: 20.0),
         Text(
-          '備考を入力してください',
+          '何か補足があれば入力してください(任意)',
           style: TextStyle(
             fontSize: 20.0,
             fontWeight: FontWeight.bold,
@@ -332,31 +332,37 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         if (_currentStep > 0)
-          ElevatedButton(
-            onPressed: _previousStep,
-            child: Text('前へ'),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _previousStep,
+              child: Text('前へ'),
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                textStyle: TextStyle(
+                  fontSize: 22.0,
+                ),
+                backgroundColor: Colors.white, // 背景色
+                foregroundColor: Colors.green[800], // テキスト色
+              ),
+            ),
+          ),
+        SizedBox(width: 16), // ボタン間のスペースを追加
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _currentStep < 2 ? _nextStep : () => _completeSelection(context),
+            child: Text(_currentStep < 2 ? '次へ' : '完了'),
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
               textStyle: TextStyle(
-                fontSize: 30.0,
+                fontSize: 22.0,
               ),
-              backgroundColor: Colors.green[900], // 背景色
-              foregroundColor: Colors.white,        // テキスト色
+              backgroundColor: Colors.green[800], // 背景色
+              foregroundColor: Colors.white, // テキスト色
             ),
-          ),
-        ElevatedButton(
-          onPressed: _currentStep < 2 ? _nextStep : () => _completeSelection(context),
-          child: Text(_currentStep < 2 ? '次へ' : '完了'),
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
-            textStyle: TextStyle(
-              fontSize: 30.0,
-            ),
-            backgroundColor: Colors.green[900], // 背景色
-            foregroundColor: Colors.white,        // テキスト色
           ),
         ),
       ],
     );
   }
+
 }

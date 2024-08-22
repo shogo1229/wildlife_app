@@ -70,9 +70,23 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('痕跡の情報を入力'),
-        backgroundColor: Colors.green[800],
+        title: Text(
+          '痕跡情報入力',
+          style: TextStyle(
+            fontSize: 16.0,  // フォントサイズを小さく設定
+          ),
+        ),
+        backgroundColor: Colors.white12,  // 背景色を半透明に設定
+        elevation: 0,  // AppBar自体の影をなくす
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(2.0),  // 横棒の高さを設定
+          child: Container(
+            color: Colors.grey,  // 横棒の色を灰色に設定
+            height: 2.0,  // 横棒の高さを設定
+          ),
+        ),
       ),
+
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -111,9 +125,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '動物の種類を選択してください',
+          '発見した痕跡の獣種を選択してください',
           style: TextStyle(
-            fontSize: 20.0,
+            fontSize: 18.0,
             fontWeight: FontWeight.bold,
             color: Colors.green[800],
           ),
@@ -126,9 +140,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               spacing: 20.0,
               runSpacing: 20.0,
               children: [
-                _buildAnimalTypeButton('lib/assets/images/Boar.png', 'Boar'),
-                _buildAnimalTypeButton('lib/assets/images/Deer.png', 'Deer'),
-                _buildAnimalTypeButton('lib/assets/images/Other.png', 'Other'),
+                _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
+                _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
+                _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
               ],
             ),
           ),
@@ -159,9 +173,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               children: [
                 _buildTraceTypeButton('足跡', 'animal_footprint', Icons.pets),
                 _buildTraceTypeButton('糞', 'animal_dropping', Icons.delete),
-                _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping', Icons.park),
-                _buildTraceTypeButton('角こすり跡', 'horn-rubbing', Icons.handyman),
-                _buildTraceTypeButton('獣道', 'animal-trail', Icons.terrain),
+                _buildTraceTypeButton('その他', 'animal_others', Icons.park),
               ],
             ),
           ),
@@ -201,7 +213,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
-  Widget _buildAnimalTypeButton(String imagePath, String type) {
+  Widget _buildAnimalTypeButton(String imagePath, String label, String type) {
     return GestureDetector(
       onTap: () => setState(() {
         _animalType = type;
@@ -230,7 +242,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             ),
             SizedBox(height: 8.0),
             Text(
-              type,
+              label,
               style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
@@ -242,6 +254,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       ),
     );
   }
+
 
   Widget _buildTraceTypeButton(String label, String type, IconData icon) {
     return GestureDetector(
@@ -338,12 +351,8 @@ class _Local_CameraState extends State<Local_Camera> {
         return '足跡';
       case 'animal_dropping':
         return '糞';
-      case 'bark-stripping':
-        return '樹皮剥ぎ跡';
-      case 'horn-rubbing':
-        return '角こすり跡';
-      case 'animal-trail':
-        return '獣道';
+      case 'animal_others':
+        return 'その他';
       default:
         return 'Unknown'; // Handle unknown trace types if needed
     }

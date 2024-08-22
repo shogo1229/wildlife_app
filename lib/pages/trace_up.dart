@@ -6,7 +6,7 @@ class TraceUpPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('TraceUpPage'),
+        title: Text('撮影'),
       ),
       body: TraceUpIndex(),
     );

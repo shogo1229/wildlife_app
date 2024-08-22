@@ -50,11 +50,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home:
-          AuthenticationWrapper(), // 認証の状態によって表示する画面を決定するAuthenticationWrapper
+      theme: ThemeData(
+        fontFamily: "Noto Sans JP",  // ここでフォントを指定
+      ),
+      home: AuthenticationWrapper(), // 認証の状態によって表示する画面を決定するAuthenticationWrapper
     );
   }
 }
+
 
 // AuthenticationWrapperクラス内のbuildメソッドの一部
 class AuthenticationWrapper extends StatelessWidget {

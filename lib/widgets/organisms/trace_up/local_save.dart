@@ -86,7 +86,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           ),
         ),
       ),
-
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
@@ -255,7 +254,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
-
   Widget _buildTraceTypeButton(String label, String type, IconData icon) {
     return GestureDetector(
       onTap: () => setState(() {
@@ -339,11 +337,12 @@ class Local_Camera extends StatefulWidget {
 
 // Local_Cameraの State クラス
 class _Local_CameraState extends State<Local_Camera> {
-  static List<PhotoData> _images = []; // アプリ内で管理する写真データのリスト
+  static List<PhotoData> _pendingUploadImages = []; // アップロード待ちの写真データのリスト
   final ImagePicker _picker = ImagePicker(); // 画像選択ライブラリ
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance; // Firebase Firestore
   late String _selectedUserId; // 選択されたユーザーのID
+  bool _isUploading = false; // アップロード中かどうかを示すフラグ
 
   String getTraceType(String traceType) {
     switch (traceType) {
@@ -399,7 +398,7 @@ class _Local_CameraState extends State<Local_Camera> {
                   crossAxisSpacing: 4.0,
                   mainAxisSpacing: 4.0,
                 ),
-                itemCount: _images.length,
+                itemCount: _pendingUploadImages.length,
                 itemBuilder: (context, index) {
                   return Card(
                     child: Column(
@@ -408,7 +407,7 @@ class _Local_CameraState extends State<Local_Camera> {
                           child: Padding(
                             padding: const EdgeInsets.all(5),
                             child: Image.file(
-                              _images[index].image,
+                              _pendingUploadImages[index].image,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -419,7 +418,7 @@ class _Local_CameraState extends State<Local_Camera> {
                               Icon(Icons.pets), // Add animal icon
                               SizedBox(width: 4.0),
                               Text(
-                                '獣種: ${getAnimalType(_images[index].animalType)}',
+                                '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
                                 style: TextStyle(fontSize: 10.0),
                               ),
                             ],
@@ -432,7 +431,7 @@ class _Local_CameraState extends State<Local_Camera> {
                                   Icon(Icons.pets), // Add trace icon
                                   SizedBox(width: 4.0),
                                   Text(
-                                    '痕跡種: ${getTraceType(_images[index].traceType)}',
+                                    '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
                                     style: TextStyle(fontSize: 10.0),
                                   ),
                                 ],
@@ -461,15 +460,22 @@ class _Local_CameraState extends State<Local_Camera> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: _uploadImages,
-                  child: Row(
-                    children: [
-                      Icon(Icons.upload), // Add upload icon
-                      SizedBox(
-                          width: 8), // Add some space between the icon and text
-                      Text('アップロード'),
-                    ],
-                  ),
+                  onPressed: _isUploading ? null : _uploadImages,  // アップロード中はボタンを無効化
+                  child: _isUploading
+                      ? Row(
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(width: 8),
+                            Text('アップロード中...'),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Icon(Icons.upload),
+                            SizedBox(width: 8),
+                            Text('アップロード'),
+                          ],
+                        ),
                 ),
               ],
             ),
@@ -484,11 +490,10 @@ class _Local_CameraState extends State<Local_Camera> {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
       Position position = await _getCurrentLocation();
-      _showAnimalTypeMemoDialog(File(imageFile.path), position);
+      await _showAnimalTypeMemoDialog(File(imageFile.path), position);
     }
   }
 
-  // AnimalTypeMemoWizard ダイアログを表示する関数
   Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(
       context: context,
@@ -498,22 +503,23 @@ class _Local_CameraState extends State<Local_Camera> {
     );
 
     if (result != null) {
-      String animalType = result['animalType'];
-      String traceType = result['traceType'] ?? ''; // Corrected here
+      String animalType = result['animalType'] ?? 'error';
+      String traceType = result['traceType'] ?? 'error';
       String memo = result['memo'];
 
       setState(() {
-        _images.add(PhotoData(
+        _pendingUploadImages.add(PhotoData(
           image: image,
           imageUrl: '',
           animalType: animalType,
-          traceType: traceType, // Corrected here
+          traceType: traceType,
           memo: memo,
           position: position,
         ));
       });
     }
   }
+
 
   // 画像をアップロードしポイントを更新する関数
   Future<void> _uploadImages() async {
@@ -530,47 +536,33 @@ class _Local_CameraState extends State<Local_Camera> {
       return;
     }
 
-    List<PhotoData> imagesCopy = List.from(_images);
+    setState(() {
+      _isUploading = true; // アップロード中であることを示す
+    });
+
+    List<PhotoData> imagesCopy = List.from(_pendingUploadImages);
 
     for (var data in imagesCopy) {
       try {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return UploadProgressModal(
-              message:
-                  'Uploading ${_images.indexOf(data) + 1}/${_images.length}',
-            );
-          },
-        );
-
-        Position position = data.position;
-
-        data.imageUrl =
-            await _uploadImage(data.image, data.animalType, position);
-        await _saveToFirestore(position, data.imageUrl, data.animalType,
-            data.memo, _selectedUserId);
-
+        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
+        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, _selectedUserId);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
 
         setState(() {
-          _images.remove(data);
+          _pendingUploadImages.remove(data);
         });
-
-        Navigator.pop(context); // 進捗ダイアログを閉じる
+        
       } catch (e) {
         print('Error during image upload: $e');
-        Navigator.pop(context); // 進捗ダイアログを閉じる
       }
     }
 
     setState(() {
-      _images = _images.where((data) => data.imageUrl.isNotEmpty).toList();
+      _isUploading = false; // アップロード完了後にフラグをリセット
     });
 
-    if (_images.isEmpty) {
+    if (_pendingUploadImages.isEmpty) {
       showDialog(
         context: context,
         builder: (context) {
@@ -621,7 +613,7 @@ class _Local_CameraState extends State<Local_Camera> {
       if (querySnapshot.docs.isNotEmpty) {
         var doc = querySnapshot.docs[0];
         await doc.reference.update({
-          'total_point': FieldValue.increment(1),
+          'total_point': FieldValue.increment(numberOfPhotos),
         });
       } else {
         await FirebaseFirestore.instance.collection('User_Information').add({

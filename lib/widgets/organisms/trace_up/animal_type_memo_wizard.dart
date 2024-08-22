@@ -20,7 +20,11 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
-    if (_currentStep < 2) {
+    if (_animalType == 'start_flag') {
+      // `START` が選択されている場合、`traceType` を 'camera' に設定して完了する
+      _traceType = 'camera';
+      _completeSelection(context);
+    } else if (_currentStep < 2) {
       setState(() {
         _currentStep += 1;
       });
@@ -119,11 +123,96 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
                 _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
                 _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
                 _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
+                _buildStartButton(), // STARTボタンを追加
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildAnimalTypeButton(String imagePath, String label, String type) {
+    return GestureDetector(
+      onTap: () => setState(() {
+        _animalType = type;
+      }),
+      child: Container(
+        width: 120.0,
+        height: 140.0,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _animalType == type ? Colors.green[800]! : Colors.grey,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(16.0),
+          color: _animalType == type
+              ? Colors.green[100]
+              : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              imagePath,
+              width: 60.0,
+              height: 60.0,
+              fit: BoxFit.cover,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: _animalType == type ? Colors.green[800] : Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartButton() {
+    return GestureDetector(
+      onTap: () => setState(() {
+        _animalType = 'start_flag';  // animal_type に start_flag を設定
+        _nextStep(); // 次のステップに進む
+      }),
+      child: Container(
+        width: 120.0,
+        height: 140.0,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _animalType == 'start_flag' ? Colors.green[800]! : Colors.grey,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(16.0),
+          color: _animalType == 'start_flag'
+              ? Colors.green[100]
+              : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.access_time,  // 時計アイコンを使用
+              size: 60.0,
+              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              'START',
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -194,48 +283,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildAnimalTypeButton(String imagePath, String label, String type) {
-    return GestureDetector(
-      onTap: () => setState(() {
-        _animalType = type;
-      }),
-      child: Container(
-        width: 120.0,
-        height: 140.0,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _animalType == type ? Colors.green[800]! : Colors.grey,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(16.0),
-          color: _animalType == type
-              ? Colors.green[100]
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              imagePath,
-              width: 60.0,
-              height: 60.0,
-              fit: BoxFit.cover,
-            ),
-            SizedBox(height: 8.0),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color: _animalType == type ? Colors.green[800] : Colors.black,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -345,7 +392,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         SizedBox(width: 16), // ボタン間のスペースを追加
         Expanded(
           child: ElevatedButton(
-            onPressed: _currentStep < 2 ? _nextStep : () => _completeSelection(context),
+            onPressed: _nextStep,
             child: Text(_currentStep < 2 ? '次へ' : '完了'),
             style: ElevatedButton.styleFrom(
               padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
@@ -360,5 +407,4 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       ],
     );
   }
-
 }

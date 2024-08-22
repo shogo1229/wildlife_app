@@ -40,6 +40,8 @@ class _Local_CameraState extends State<Local_Camera> {
         return '糞';
       case 'trace_others':
         return 'その他';
+      case 'camera':
+        return 'カメラ';
       default:
         return 'Unknown'; // Handle unknown trace types if needed
     }
@@ -53,6 +55,8 @@ class _Local_CameraState extends State<Local_Camera> {
         return 'シカ';
       case 'Other':
         return 'その他/不明';
+      case 'start_flag':
+        return '開始確認';
       default:
         return 'error'; // Handle unknown trace types if needed
     }

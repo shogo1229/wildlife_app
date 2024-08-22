@@ -340,8 +340,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               textStyle: TextStyle(
                 fontSize: 30.0,
               ),
-              primary: Colors.green[900], // 背景色
-              onPrimary: Colors.white,        // テキスト色
+              backgroundColor: Colors.green[900], // 背景色
+              foregroundColor: Colors.white,        // テキスト色
             ),
           ),
         ElevatedButton(
@@ -352,8 +352,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             textStyle: TextStyle(
               fontSize: 30.0,
             ),
-            primary: Colors.green[900], // 背景色
-            onPrimary: Colors.white,        // テキスト色
+            backgroundColor: Colors.green[900], // 背景色
+            foregroundColor: Colors.white,        // テキスト色
           ),
         ),
       ],

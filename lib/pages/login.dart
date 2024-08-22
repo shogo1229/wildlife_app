@@ -105,8 +105,8 @@ class _LoginPageState extends State<LoginPage> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.blue,
-                    onPrimary: Colors.white,
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
                   ),
                   child: const Text('ログイン'),
                 ),
@@ -137,8 +137,8 @@ class _LoginPageState extends State<LoginPage> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    primary: Colors.white,
-                    onPrimary: Colors.blue,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.blue,
                   ),
                   child: const Text('ユーザ登録'),
                 ),

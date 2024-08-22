@@ -19,10 +19,10 @@ class _HomeState extends State<Home> {
       child: Column(
         children: <Widget>[
           const TabBar(
-            labelColor: Colors.black, // Set the text color for selected tab
+            labelColor: Colors.green, // Set the text color for selected tab
             unselectedLabelColor:
                 Colors.grey, // Set the text color for unselected tabs
-            indicatorColor: Colors.grey, // Set the color of the indicator
+            indicatorColor: Colors.green, // Set the color of the indicator
             tabs: [
               Tab(text: '全て表示'),
               Tab(text: 'イノシシ'),

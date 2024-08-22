@@ -104,8 +104,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '発見した痕跡の獣種を選択してください',
           style: TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
+            fontSize:18.0,
             color: Colors.green[800],
           ),
         ),
@@ -135,8 +134,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '痕跡の種類を選択してください',
           style: TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
+            fontSize: 20.0,
             color: Colors.green[800],
           ),
         ),
@@ -166,8 +164,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '何日前の痕跡？',
           style: TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
+            fontSize: 20.0,
             color: Colors.green[800],
           ),
         ),
@@ -178,7 +175,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           '何か補足があれば入力してください(任意)',
           style: TextStyle(
             fontSize: 20.0,
-            fontWeight: FontWeight.bold,
             color: Colors.green[800],
           ),
         ),

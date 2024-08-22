@@ -111,7 +111,7 @@ class _Local_CameraState extends State<Local_Camera> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: Icon(Icons.edit, color: Colors.green),
+                              icon: Icon(Icons.edit, color: Colors.green[800]),
                               onPressed: () {
                                 _editPhotoData(index);
                               },

@@ -397,7 +397,7 @@ class _Local_CameraState extends State<Local_Camera> {
                         ListTile(
                           leading: Image.file(
                             _pendingUploadImages[index].image,
-                            width: 100.0,
+                            width: 200.0,
                             height: 200.0,
                             fit: BoxFit.cover,
                           ),
@@ -419,11 +419,26 @@ class _Local_CameraState extends State<Local_Camera> {
                               ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.edit, color: Colors.green),
-                            onPressed: () {
-                              _editPhotoData(index);
-                            },
+                          trailing: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: IconButton(
+                                  icon: Icon(Icons.edit, color: Colors.green),
+                                  onPressed: () {
+                                    _editPhotoData(index);
+                                  },
+                                ),
+                              ),
+                              Flexible(
+                                child: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () {
+                                    _confirmDelete(index);
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -484,6 +499,38 @@ class _Local_CameraState extends State<Local_Camera> {
         _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
         _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
         _pendingUploadImages[index].memo = result['memo'] ?? '';
+      });
+    }
+  }
+
+  Future<void> _confirmDelete(int index) async {
+    bool? deleteConfirmed = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('取消の確認'),
+          content: Text('この写真を取り消しますか？'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: Text('いいえ'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: Text('はい', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (deleteConfirmed == true) {
+      setState(() {
+        _pendingUploadImages.removeAt(index);
       });
     }
   }

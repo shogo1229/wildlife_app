@@ -8,6 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
+import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:geolocator/geolocator.dart';
 
 // 写真データのクラス
 class PhotoData {
@@ -16,7 +19,7 @@ class PhotoData {
   String animalType;
   String memo;
   Position position;
-  String traceType; // 痕跡の種類の新しいフィールド
+  String traceType; // 痕跡の種類のフィールド
 
   PhotoData({
     required this.image,
@@ -28,123 +31,144 @@ class PhotoData {
   });
 }
 
-// 動物の種類とメモを選択するページの Stateful Widget
-class AnimalTypeMemoPage extends StatefulWidget {
+// 動物の種類とメモを選択するウィザード形式の Stateful Widget
+class AnimalTypeMemoWizard extends StatefulWidget {
   final File image;
 
-  AnimalTypeMemoPage({required this.image});
+  AnimalTypeMemoWizard({required this.image});
 
   @override
-  _AnimalTypeMemoPageState createState() => _AnimalTypeMemoPageState();
+  _AnimalTypeMemoWizardState createState() => _AnimalTypeMemoWizardState();
 }
 
-class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
+class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
+  int _currentStep = 0;
   String? _animalType; // 選択された動物の種類
   String? _traceType; // 選択された痕跡の種類
-  TextEditingController _memoController =
-      TextEditingController(); // メモのテキストエディティングコントローラ
-  String? _selectedUserId; // 選択されたユーザーのID
+  TextEditingController _memoController = TextEditingController(); // メモのテキストエディティングコントローラ
+
+  // ステップを次に進める
+  void _nextStep() {
+    if (_currentStep < 2) {
+      setState(() {
+        _currentStep += 1;
+      });
+    }
+  }
+
+  // ステップを前に戻す
+  void _previousStep() {
+    if (_currentStep > 0) {
+      setState(() {
+        _currentStep -= 1;
+      });
+    }
+  }
+
+  // 選択が完了したらダイアログを閉じて結果を返す
+  void _completeSelection(BuildContext context) {
+    Navigator.of(context).pop({
+      'animalType': _animalType,
+      'traceType': _traceType,
+      'memo': _memoController.text,
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('痕跡の情報を選択してください'),
-      content: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('痕跡の情報を入力'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: _buildCurrentStep(),
+          ),
+          _buildNavigationButtons(),
+        ],
+      ),
+    );
+  }
+
+  // 現在のステップに応じたウィジェットを構築する
+  Widget _buildCurrentStep() {
+    switch (_currentStep) {
+      case 0:
+        return _buildAnimalTypeSelection();
+      case 1:
+        return _buildTraceTypeSelection();
+      case 2:
+        return _buildMemoInput();
+      default:
+        return Container();
+    }
+  }
+
+  // 動物の種類を選択するステップ
+  Widget _buildAnimalTypeSelection() {
+    return Column(
+      children: [
+        Text('動物の種類を選択してください'),
+        Wrap(
+          alignment: WrapAlignment.spaceEvenly,
           children: [
-            // 獣種（動物の種類）のボタン
-            Wrap(
-              alignment: WrapAlignment.spaceEvenly,
-              children: [
-                _buildAnimalTypeButton('lib/assets/images/Boar.png', 'Boar'),
-                _buildAnimalTypeButton('lib/assets/images/Deer.png', 'Deer'),
-                _buildAnimalTypeButton('lib/assets/images/Other.png', 'Other'),
-              ],
-            ),
-            SizedBox(height: 16.0),
-
-            // 痕跡の種類のボタン
-            Wrap(
-              alignment: WrapAlignment.spaceEvenly,
-              children: [
-                _buildTraceTypeButton('足跡', 'animal_footprint'),
-                _buildTraceTypeButton('糞', 'animal_dropping'),
-                _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping'),
-                _buildTraceTypeButton('角こすり跡', 'horn-rubbing'),
-                _buildTraceTypeButton('獣道', 'animal-trail'),
-              ],
-            ),
-            SizedBox(height: 16.0),
-
-            // 備考欄
-            TextField(
-              controller: _memoController,
-              decoration: InputDecoration(
-                labelText: '備考欄',
-                contentPadding: EdgeInsets.symmetric(vertical: 10.0),
-              ),
-              maxLines: 5,
-            ),
-            SizedBox(height: 16.0),
-
-            // 保存ボタン
-            ElevatedButton(
-              onPressed: () => _completeSelection(context),
-              style: ElevatedButton.styleFrom(
-                primary: Colors.blue, // グレーの背景色
-              ),
-              child: Text(
-                '保存',
-                style: TextStyle(
-                  color: Colors.white, // 白い文字色
-                ),
-              ),
-            ),
+            _buildAnimalTypeButton('lib/assets/images/Boar.png', 'Boar'),
+            _buildAnimalTypeButton('lib/assets/images/Deer.png', 'Deer'),
+            _buildAnimalTypeButton('lib/assets/images/Other.png', 'Other'),
           ],
         ),
-      ),
+      ],
     );
   }
 
-// 痕跡の種類ボタンを構築する関数
-  Widget _buildTraceTypeButton(String label, String type) {
-    return GestureDetector(
-      onTap: () => _selectTraceType(type),
-      child: Container(
-        padding: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _traceType == type
-                ? Colors.red
-                : Colors.grey, // Default color is gray
-            width: 2.0,
+  // 痕跡の種類を選択するステップ
+  Widget _buildTraceTypeSelection() {
+    return Column(
+      children: [
+        Text('痕跡の種類を選択してください'),
+        Wrap(
+          alignment: WrapAlignment.spaceEvenly,
+          children: [
+            _buildTraceTypeButton('足跡', 'animal_footprint'),
+            _buildTraceTypeButton('糞', 'animal_dropping'),
+            _buildTraceTypeButton('樹皮剥ぎ跡', 'bark-stripping'),
+            _buildTraceTypeButton('角こすり跡', 'horn-rubbing'),
+            _buildTraceTypeButton('獣道', 'animal-trail'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 備考を入力するステップ
+  Widget _buildMemoInput() {
+    return Column(
+      children: [
+        Text('備考を入力してください'),
+        TextField(
+          controller: _memoController,
+          decoration: InputDecoration(
+            labelText: '備考',
+            contentPadding: EdgeInsets.symmetric(vertical: 10.0),
           ),
-          borderRadius: BorderRadius.circular(8.0),
-          color: _traceType == type
-              ? Colors.grey.withOpacity(0.5)
-              : Colors.transparent,
+          maxLines: 5,
         ),
-        margin: EdgeInsets.all(8.0),
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-        ),
-      ),
+      ],
     );
   }
 
-// 動物の種類ボタンを構築する関数
+  // 動物の種類ボタンを構築する関数
   Widget _buildAnimalTypeButton(String? imagePath, String type) {
     return GestureDetector(
-      onTap: () => _selectAnimalType(type),
+      onTap: () => setState(() {
+        _animalType = type;
+      }),
       child: Container(
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           border: Border.all(
-            color: _animalType == type
-                ? Colors.red
-                : Colors.grey, // Default color is gray
+            color: _animalType == type ? Colors.red : Colors.grey,
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(8.0),
@@ -155,7 +179,6 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
         margin: EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // 動物の画像（もしあれば）
             imagePath != null
                 ? Image.asset(
                     imagePath,
@@ -175,56 +198,48 @@ class _AnimalTypeMemoPageState extends State<AnimalTypeMemoPage> {
     );
   }
 
-  // 動物の種類が選択されたときの処理
-  void _selectAnimalType(String type) {
-    setState(() {
-      _animalType = type;
-    });
-  }
-
-  // 痕跡の種類が選択されたときの処理
-  void _selectTraceType(String type) {
-    setState(() {
-      _traceType = type;
-    });
-  }
-
-  // 選択が完了しダイアログを閉じる処理
-  void _completeSelection(BuildContext context) {
-    _selectedUserId = context.read<UserProvider>().getUserId();
-    Navigator.of(context).pop({
-      'animalType': _animalType,
-      'traceType': _traceType,
-      'memo': _memoController.text,
-      'selectedUserId': _selectedUserId,
-    });
-  }
-}
-
-// アップロード進捗を表示する Stateful Widget
-class UploadProgressModal extends StatefulWidget {
-  final String message;
-
-  UploadProgressModal({required this.message});
-
-  @override
-  _UploadProgressModalState createState() => _UploadProgressModalState();
-}
-
-// UploadProgressModalの State クラス
-class _UploadProgressModalState extends State<UploadProgressModal> {
-  @override
-  Widget build(BuildContext context) {
-    // アップロード進捗を表示する UI
-    return AlertDialog(
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16.0),
-          Text(widget.message),
-        ],
+  // 痕跡の種類ボタンを構築する関数
+  Widget _buildTraceTypeButton(String label, String type) {
+    return GestureDetector(
+      onTap: () => setState(() {
+        _traceType = type;
+      }),
+      child: Container(
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _traceType == type ? Colors.red : Colors.grey,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+          color: _traceType == type
+              ? Colors.grey.withOpacity(0.5)
+              : Colors.transparent,
+        ),
+        margin: EdgeInsets.all(8.0),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+        ),
       ),
+    );
+  }
+
+  // ナビゲーションボタンを構築する関数
+  Widget _buildNavigationButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        if (_currentStep > 0)
+          ElevatedButton(
+            onPressed: _previousStep,
+            child: Text('前へ'),
+          ),
+        ElevatedButton(
+          onPressed: _currentStep < 2 ? _nextStep : () => _completeSelection(context),
+          child: Text(_currentStep < 2 ? '次へ' : '完了'),
+        ),
+      ],
     );
   }
 }
@@ -373,7 +388,7 @@ class _Local_CameraState extends State<Local_Camera> {
     );
   }
 
-  // 写真を撮影し AnimalTypeMemoPage を表示する関数
+  // 写真を撮影し AnimalTypeMemoWizard を表示する関数
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
@@ -382,12 +397,12 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  // AnimalTypeMemoPage ダイアログを表示する関数
+  // AnimalTypeMemoWizard ダイアログを表示する関数
   Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AnimalTypeMemoPage(image: image);
+        return AnimalTypeMemoWizard(image: image);
       },
     );
 
@@ -565,6 +580,34 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<Position> _getCurrentLocation() async {
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+}
+
+// アップロード進捗を表示する Stateful Widget
+class UploadProgressModal extends StatefulWidget {
+  final String message;
+
+  UploadProgressModal({required this.message});
+
+  @override
+  _UploadProgressModalState createState() => _UploadProgressModalState();
+}
+
+// UploadProgressModalの State クラス
+class _UploadProgressModalState extends State<UploadProgressModal> {
+  @override
+  Widget build(BuildContext context) {
+    // アップロード進捗を表示する UI
+    return AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16.0),
+          Text(widget.message),
+        ],
+      ),
     );
   }
 }

@@ -392,54 +392,52 @@ class _Local_CameraState extends State<Local_Camera> {
                 itemBuilder: (context, index) {
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: Column(
+                    child: Row(
                       children: [
-                        ListTile(
-                          leading: Image.file(
-                            _pendingUploadImages[index].image,
-                            width: 200.0,
-                            height: 200.0,
-                            fit: BoxFit.cover,
-                          ),
-                          title: Text(
-                            '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
-                            style: TextStyle(fontSize: 14.0),
-                          ),
-                          subtitle: Column(
+                        Image.file(
+                          _pendingUploadImages[index].image,
+                          width: 120.0,
+                          height: 120.0,
+                          fit: BoxFit.cover,
+                        ),
+                        SizedBox(width: 16.0),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text(
+                                '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
+                                style: TextStyle(fontSize: 14.0),
+                              ),
+                              SizedBox(height: 4.0),
                               Text(
                                 '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
                                 style: TextStyle(fontSize: 14.0),
                               ),
-                              SizedBox(height: 8.0),
+                              SizedBox(height: 4.0),
                               Text(
                                 'メモ: ${_pendingUploadImages[index].memo}',
                                 style: TextStyle(fontSize: 14.0),
                               ),
                             ],
                           ),
-                          trailing: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.green),
-                                  onPressed: () {
-                                    _editPhotoData(index);
-                                  },
-                                ),
-                              ),
-                              Flexible(
-                                child: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    _confirmDelete(index);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit, color: Colors.green),
+                              onPressed: () {
+                                _editPhotoData(index);
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                _confirmDelete(index);
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),

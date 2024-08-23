@@ -13,6 +13,38 @@ import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart'; // 追加
 import 'package:flutter/services.dart'; // 追加
+import 'dart:ui' as ui;
+
+Future<File> _resizeImage(File imageFile) async {
+  // 画像ファイルをバイトデータとして読み込む
+  final bytes = await imageFile.readAsBytes();
+  // バイトデータから画像をデコードする
+  final ui.Image originalImage = await decodeImageFromList(bytes);
+
+  // 新しい画像の幅と高さを半分に設定
+  final int newWidth = (originalImage.width / 2).round();
+  final int newHeight = (originalImage.height / 2).round();
+
+  // 画像をリサイズ
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  final Paint paint = Paint();
+  final Rect src = Rect.fromLTWH(0, 0, originalImage.width.toDouble(), originalImage.height.toDouble());
+  final Rect dst = Rect.fromLTWH(0, 0, newWidth.toDouble(), newHeight.toDouble());
+
+  canvas.drawImageRect(originalImage, src, dst, paint);
+  final ui.Image resizedImage = await recorder.endRecording().toImage(newWidth, newHeight);
+
+  // リサイズされた画像をバイトデータに変換
+  final ByteData? resizedBytes = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+  final Uint8List resizedImageData = resizedBytes!.buffer.asUint8List();
+
+  // リサイズされた画像を一時ファイルとして保存
+  final tempDir = Directory.systemTemp;
+  final resizedImageFile = await File('${tempDir.path}/resized_image.png').writeAsBytes(resizedImageData);
+
+  return resizedImageFile;
+}
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -245,20 +277,22 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
-      // Convert the image file to bytes
-      final bytes = await imageFile.readAsBytes();
+      // 画像をリサイズ
+      final resizedImageFile = await _resizeImage(File(imageFile.path));
 
-      // Save the image to the device's gallery
+      // リサイズされた画像をギャラリーに保存
+      final bytes = await resizedImageFile.readAsBytes();
       final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
 
       if (result['isSuccess']) {
         Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(File(imageFile.path), position);
+        await _showAnimalTypeMemoDialog(resizedImageFile, position);
       } else {
         print('Error saving image to gallery');
       }
     }
   }
+
 
   Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(

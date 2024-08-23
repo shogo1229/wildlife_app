@@ -19,16 +19,15 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
-    if (_animalType == 'start_flag') {
-      _traceType = 'camera';
-      _completeSelection(context);
-    } else if (_animalType == 'stop_flag') {
+    if ((_animalType == 'start_flag' || _animalType == 'stop_flag') && _currentStep == 0) {
       _traceType = 'camera';
       _completeSelection(context);
     } else if (_currentStep < 2) {
       setState(() {
         _currentStep += 1;
       });
+    } else if (_currentStep == 2) {
+      _completeSelection(context);
     }
   }
 
@@ -282,9 +281,12 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               spacing: 20.0,
               runSpacing: 20.0,
               children: [
-                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets),
-                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete),
-                _buildTraceTypeButton('その他', 'trace_others', Icons.park),
+                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets), 
+                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete_sweep),
+                _buildTraceTypeButton('ぬた場', 'trace_swamp', Icons.water), 
+                _buildTraceTypeButton('泥こすり痕', 'trace_mudscrub', Icons.pool), 
+                _buildTraceTypeButton('角/牙 擦り痕', 'trace_hornscrub', Icons.park), 
+                _buildTraceTypeButton('その他', 'trace_others', Icons.filter_hdr), 
               ],
             ),
           ),

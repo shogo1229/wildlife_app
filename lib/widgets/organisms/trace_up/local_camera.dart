@@ -39,6 +39,14 @@ class _Local_CameraState extends State<Local_Camera> {
       case 'trace_dropping':
         return '糞';
       case 'trace_others':
+        return 'ぬた場';
+      case 'trace_swamp':
+        return 'ぬた場';
+      case 'trace_mudscrub':
+        return '泥こすり痕';
+      case 'trace_hornscrub':
+        return '泥こすり痕';
+      case 'trace_others':
         return 'その他';
       case 'camera':
         return 'カメラ';

@@ -10,6 +10,7 @@ class PhotoData {
   Position position;
   String traceType;
   String elapsedForTrace;
+  String confidence;
 
   PhotoData({
     required this.image,
@@ -19,5 +20,6 @@ class PhotoData {
     required this.position,
     required this.traceType,
     required this.elapsedForTrace,
+    required this.confidence,
   });
 }

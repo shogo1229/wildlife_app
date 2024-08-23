@@ -16,6 +16,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   String? _animalType;
   String? _traceType;
   String? _elapsedForTrace;
+  String? _confidence;
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
@@ -45,6 +46,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       'traceType': _traceType,
       'memo': _memoController.text,
       'elapsed_for_trace': _elapsedForTrace,
+      'confidence': _confidence,
     });
   }
 
@@ -299,15 +301,10 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '何日前の痕跡？',
-          style: TextStyle(
-            fontSize: 20.0,
-            color: Colors.green[800],
-          ),
-        ),
         SizedBox(height: 10.0),
         _buildElapsedForTraceSelection(),
+        SizedBox(height: 20.0),
+        _buildConfidenceSelection(),
         SizedBox(height: 20.0),
         Text(
           '何か補足があれば入力してください(任意)',
@@ -378,46 +375,88 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
 
   Widget _buildElapsedForTraceSelection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text('真新しい'),
-          leading: Radio<String>(
-            value: 'flesh',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
+        Text(
+          '何日前の痕跡だと思いますか？',
+          style: TextStyle(
+            fontSize: 20.0,
+            color: Colors.green[800],
           ),
         ),
-        ListTile(
-          title: Text('2~3日経過'),
-          leading: Radio<String>(
-            value: 'middle',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
-          ),
-        ),
-        ListTile(
-          title: Text('古い'),
-          leading: Radio<String>(
-            value: 'old',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
-          ),
+        SizedBox(height: 10.0),
+        DropdownButton<String>(
+          value: _elapsedForTrace,
+          items: [
+            DropdownMenuItem(
+              value: 'flesh',
+              child: Text('真新しい'),
+            ),
+            DropdownMenuItem(
+              value: 'middle',
+              child: Text('2~3日経過'),
+            ),
+            DropdownMenuItem(
+              value: 'old',
+              child: Text('古い'),
+            ),
+          ],
+          onChanged: (String? value) {
+            setState(() {
+              _elapsedForTrace = value;
+            });
+          },
+          hint: Text('選択してください'),
+          isExpanded: true,
         ),
       ],
     );
   }
+
+  Widget _buildConfidenceSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '入力した痕跡の情報にどの程度自信を持てますか？',
+          style: TextStyle(
+            fontSize: 20.0,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 10.0),
+        DropdownButton<String>(
+          value: _confidence,
+          items: [
+            DropdownMenuItem(
+              value: 'high',
+              child: Text('自信がある'),
+            ),
+            DropdownMenuItem(
+              value: 'medium_high',
+              child: Text('少し自信がある'),
+            ),
+            DropdownMenuItem(
+              value: 'medium_low',
+              child: Text('少し自信がない'),
+            ),
+            DropdownMenuItem(
+              value: 'low',
+              child: Text('自信がない'),
+            ),
+          ],
+          onChanged: (String? value) {
+            setState(() {
+              _confidence = value;
+            });
+          },
+          hint: Text('選択してください'),
+          isExpanded: true,
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildNavigationButtons() {
     return Row(

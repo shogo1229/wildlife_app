@@ -205,6 +205,7 @@ class _Local_CameraState extends State<Local_Camera> {
         _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
         _pendingUploadImages[index].memo = result['memo'] ?? '';
         _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
+        _pendingUploadImages[index].confidence = result['confidence'] ?? '';
       });
     }
   }
@@ -271,7 +272,8 @@ class _Local_CameraState extends State<Local_Camera> {
       String animalType = result['animalType'] ?? 'error';
       String traceType = result['traceType'] ?? 'error';
       String memo = result['memo'];
-      String elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
+      String elapsedForTrace = result['elapsed_for_trace'] ?? '';
+      String confidence = result['confidence'] ?? '';
 
       setState(() {
         _pendingUploadImages.add(PhotoData(
@@ -282,6 +284,7 @@ class _Local_CameraState extends State<Local_Camera> {
           memo: memo,
           position: position,
           elapsedForTrace: elapsedForTrace,
+          confidence: confidence,
         ));
       });
     }
@@ -310,7 +313,7 @@ class _Local_CameraState extends State<Local_Camera> {
     for (var data in imagesCopy) {
       try {
         data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
-        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId);
+        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId,data.confidence);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
 
@@ -403,7 +406,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   Future<void> _saveToFirestore(Position position, String imageUrl,
-      String animalType, String memo, String elapsedForTrace, String traceType,String selectedUserId) async {
+      String animalType, String memo, String elapsedForTrace, String traceType, String selectedUserId, String confidence) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
@@ -414,8 +417,10 @@ class _Local_CameraState extends State<Local_Camera> {
       'ElapsedForTrace': elapsedForTrace,
       'TraceType': traceType,
       'User_ID': selectedUserId,
+      'Confidence': confidence, // 追加
     });
   }
+
 
   Future<bool> _isConnectedToNetwork() async {
     var connectivityResult = await (Connectivity().checkConnectivity());

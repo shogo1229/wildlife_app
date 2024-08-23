@@ -1,4 +1,3 @@
-// animal_type_memo_wizard.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
@@ -21,7 +20,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
 
   void _nextStep() {
     if (_animalType == 'start_flag') {
-      // `START` が選択されている場合、`traceType` を 'camera' に設定して完了する
+      _traceType = 'camera';
+      _completeSelection(context);
+    } else if (_animalType == 'stop_flag') {
       _traceType = 'camera';
       _completeSelection(context);
     } else if (_currentStep < 2) {
@@ -108,25 +109,31 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '発見した痕跡の獣種を選択してください',
           style: TextStyle(
-            fontSize:18.0,
+            fontSize: 18.0,
             color: Colors.green[800],
           ),
         ),
         SizedBox(height: 20.0),
-        Expanded(
-          child: Center(
-            child: Wrap(
-              alignment: WrapAlignment.spaceEvenly,
-              spacing: 20.0,
-              runSpacing: 20.0,
-              children: [
-                _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
-                _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
-                _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
-                _buildStartButton(), // STARTボタンを追加
-              ],
-            ),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
+            _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
+          ],
+        ),
+        SizedBox(height: 20.0),
+        Center(
+          child: _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
+        ),
+        SizedBox(height: 20.0),
+        Divider(color: Colors.grey),
+        SizedBox(height: 20.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStartButton(),
+            _buildStopButton(),
+          ],
         ),
       ],
     );
@@ -177,8 +184,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   Widget _buildStartButton() {
     return GestureDetector(
       onTap: () => setState(() {
-        _animalType = 'start_flag';  // animal_type に start_flag を設定
-        _nextStep(); // 次のステップに進む
+        _animalType = 'start_flag';
+        _nextStep();
       }),
       child: Container(
         width: 120.0,
@@ -197,17 +204,57 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.access_time,  // 時計アイコンを使用
+              Icons.access_time,
               size: 60.0,
-              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
             ),
             SizedBox(height: 8.0),
             Text(
-              'START',
+              '調査開始',
               style: TextStyle(
                 fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStopButton() {
+    return GestureDetector(
+      onTap: () => setState(() {
+        _animalType = 'stop_flag';
+        _nextStep();
+      }),
+      child: Container(
+        width: 120.0,
+        height: 140.0,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _animalType == 'stop_flag' ? Colors.green[800]! : Colors.grey,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(16.0),
+          color: _animalType == 'stop_flag'
+              ? Colors.green[100]
+              : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.stop_circle,
+              size: 60.0,
+              color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              '調査終了',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
               ),
             ),
           ],

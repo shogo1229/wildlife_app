@@ -57,6 +57,8 @@ class _Local_CameraState extends State<Local_Camera> {
         return 'その他/不明';
       case 'start_flag':
         return '開始確認';
+      case 'stop_flag':
+        return '終了確認';
       default:
         return 'error'; // Handle unknown trace types if needed
     }
@@ -194,7 +196,7 @@ class _Local_CameraState extends State<Local_Camera> {
         _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
         _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
         _pendingUploadImages[index].memo = result['memo'] ?? '';
-        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
+        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
       });
     }
   }

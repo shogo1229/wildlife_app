@@ -1,4 +1,3 @@
-// animal_type_memo_wizard.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
@@ -17,17 +16,19 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   String? _animalType;
   String? _traceType;
   String? _elapsedForTrace;
+  String? _confidence;
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
-    if (_animalType == 'start_flag') {
-      // `START` が選択されている場合、`traceType` を 'camera' に設定して完了する
+    if ((_animalType == 'start_flag' || _animalType == 'stop_flag') && _currentStep == 0) {
       _traceType = 'camera';
       _completeSelection(context);
     } else if (_currentStep < 2) {
       setState(() {
         _currentStep += 1;
       });
+    } else if (_currentStep == 2) {
+      _completeSelection(context);
     }
   }
 
@@ -45,6 +46,7 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
       'traceType': _traceType,
       'memo': _memoController.text,
       'elapsed_for_trace': _elapsedForTrace,
+      'confidence': _confidence,
     });
   }
 
@@ -108,25 +110,31 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Text(
           '発見した痕跡の獣種を選択してください',
           style: TextStyle(
-            fontSize:18.0,
+            fontSize: 18.0,
             color: Colors.green[800],
           ),
         ),
         SizedBox(height: 20.0),
-        Expanded(
-          child: Center(
-            child: Wrap(
-              alignment: WrapAlignment.spaceEvenly,
-              spacing: 20.0,
-              runSpacing: 20.0,
-              children: [
-                _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
-                _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
-                _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
-                _buildStartButton(), // STARTボタンを追加
-              ],
-            ),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
+            _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
+          ],
+        ),
+        SizedBox(height: 20.0),
+        Center(
+          child: _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
+        ),
+        SizedBox(height: 20.0),
+        Divider(color: Colors.grey),
+        SizedBox(height: 20.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStartButton(),
+            _buildStopButton(),
+          ],
         ),
       ],
     );
@@ -177,8 +185,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   Widget _buildStartButton() {
     return GestureDetector(
       onTap: () => setState(() {
-        _animalType = 'start_flag';  // animal_type に start_flag を設定
-        _nextStep(); // 次のステップに進む
+        _animalType = 'start_flag';
+        _nextStep();
       }),
       child: Container(
         width: 120.0,
@@ -197,17 +205,57 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.access_time,  // 時計アイコンを使用
+              Icons.access_time,
               size: 60.0,
-              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
             ),
             SizedBox(height: 8.0),
             Text(
-              'START',
+              '調査開始',
               style: TextStyle(
                 fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.black,
+                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStopButton() {
+    return GestureDetector(
+      onTap: () => setState(() {
+        _animalType = 'stop_flag';
+        _nextStep();
+      }),
+      child: Container(
+        width: 120.0,
+        height: 140.0,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _animalType == 'stop_flag' ? Colors.green[800]! : Colors.grey,
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(16.0),
+          color: _animalType == 'stop_flag'
+              ? Colors.green[100]
+              : Colors.transparent,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.stop_circle,
+              size: 60.0,
+              color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              '調査終了',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
               ),
             ),
           ],
@@ -235,9 +283,12 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               spacing: 20.0,
               runSpacing: 20.0,
               children: [
-                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets),
-                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete),
-                _buildTraceTypeButton('その他', 'trace_others', Icons.park),
+                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets), 
+                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete_sweep),
+                _buildTraceTypeButton('ぬた場', 'trace_swamp', Icons.water), 
+                _buildTraceTypeButton('泥こすり痕', 'trace_mudscrub', Icons.pool), 
+                _buildTraceTypeButton('角/牙 擦り痕', 'trace_hornscrub', Icons.park), 
+                _buildTraceTypeButton('その他', 'trace_others', Icons.filter_hdr), 
               ],
             ),
           ),
@@ -250,15 +301,10 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '何日前の痕跡？',
-          style: TextStyle(
-            fontSize: 20.0,
-            color: Colors.green[800],
-          ),
-        ),
         SizedBox(height: 10.0),
         _buildElapsedForTraceSelection(),
+        SizedBox(height: 20.0),
+        _buildConfidenceSelection(),
         SizedBox(height: 20.0),
         Text(
           '何か補足があれば入力してください(任意)',
@@ -329,46 +375,88 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
 
   Widget _buildElapsedForTraceSelection() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          title: Text('真新しい'),
-          leading: Radio<String>(
-            value: 'flesh',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
+        Text(
+          '何日前の痕跡だと思いますか？',
+          style: TextStyle(
+            fontSize: 20.0,
+            color: Colors.green[800],
           ),
         ),
-        ListTile(
-          title: Text('2~3日経過'),
-          leading: Radio<String>(
-            value: 'middle',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
-          ),
-        ),
-        ListTile(
-          title: Text('古い'),
-          leading: Radio<String>(
-            value: 'old',
-            groupValue: _elapsedForTrace,
-            onChanged: (String? value) {
-              setState(() {
-                _elapsedForTrace = value;
-              });
-            },
-          ),
+        SizedBox(height: 10.0),
+        DropdownButton<String>(
+          value: _elapsedForTrace,
+          items: [
+            DropdownMenuItem(
+              value: 'flesh',
+              child: Text('真新しい'),
+            ),
+            DropdownMenuItem(
+              value: 'middle',
+              child: Text('2~3日経過'),
+            ),
+            DropdownMenuItem(
+              value: 'old',
+              child: Text('古い'),
+            ),
+          ],
+          onChanged: (String? value) {
+            setState(() {
+              _elapsedForTrace = value;
+            });
+          },
+          hint: Text('選択してください'),
+          isExpanded: true,
         ),
       ],
     );
   }
+
+  Widget _buildConfidenceSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '入力した痕跡の情報にどの程度自信を持てますか？',
+          style: TextStyle(
+            fontSize: 20.0,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 10.0),
+        DropdownButton<String>(
+          value: _confidence,
+          items: [
+            DropdownMenuItem(
+              value: 'high',
+              child: Text('自信がある'),
+            ),
+            DropdownMenuItem(
+              value: 'medium_high',
+              child: Text('少し自信がある'),
+            ),
+            DropdownMenuItem(
+              value: 'medium_low',
+              child: Text('少し自信がない'),
+            ),
+            DropdownMenuItem(
+              value: 'low',
+              child: Text('自信がない'),
+            ),
+          ],
+          onChanged: (String? value) {
+            setState(() {
+              _confidence = value;
+            });
+          },
+          hint: Text('選択してください'),
+          isExpanded: true,
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildNavigationButtons() {
     return Row(

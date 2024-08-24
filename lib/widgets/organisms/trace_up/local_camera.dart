@@ -13,6 +13,38 @@ import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart'; // 追加
 import 'package:flutter/services.dart'; // 追加
+import 'dart:ui' as ui;
+
+Future<File> _resizeImage(File imageFile) async {
+  // 画像ファイルをバイトデータとして読み込む
+  final bytes = await imageFile.readAsBytes();
+  // バイトデータから画像をデコードする
+  final ui.Image originalImage = await decodeImageFromList(bytes);
+
+  // 新しい画像の幅と高さを半分に設定
+  final int newWidth = (originalImage.width / 2).round();
+  final int newHeight = (originalImage.height / 2).round();
+
+  // 画像をリサイズ
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  final Paint paint = Paint();
+  final Rect src = Rect.fromLTWH(0, 0, originalImage.width.toDouble(), originalImage.height.toDouble());
+  final Rect dst = Rect.fromLTWH(0, 0, newWidth.toDouble(), newHeight.toDouble());
+
+  canvas.drawImageRect(originalImage, src, dst, paint);
+  final ui.Image resizedImage = await recorder.endRecording().toImage(newWidth, newHeight);
+
+  // リサイズされた画像をバイトデータに変換
+  final ByteData? resizedBytes = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
+  final Uint8List resizedImageData = resizedBytes!.buffer.asUint8List();
+
+  // リサイズされた画像を一時ファイルとして保存
+  final tempDir = Directory.systemTemp;
+  final resizedImageFile = await File('${tempDir.path}/resized_image.png').writeAsBytes(resizedImageData);
+
+  return resizedImageFile;
+}
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -39,6 +71,14 @@ class _Local_CameraState extends State<Local_Camera> {
       case 'trace_dropping':
         return '糞';
       case 'trace_others':
+        return 'ぬた場';
+      case 'trace_swamp':
+        return 'ぬた場';
+      case 'trace_mudscrub':
+        return '泥こすり痕';
+      case 'trace_hornscrub':
+        return '泥こすり痕';
+      case 'trace_others':
         return 'その他';
       case 'camera':
         return 'カメラ';
@@ -57,6 +97,8 @@ class _Local_CameraState extends State<Local_Camera> {
         return 'その他/不明';
       case 'start_flag':
         return '開始確認';
+      case 'stop_flag':
+        return '終了確認';
       default:
         return 'error'; // Handle unknown trace types if needed
     }
@@ -194,7 +236,8 @@ class _Local_CameraState extends State<Local_Camera> {
         _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
         _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
         _pendingUploadImages[index].memo = result['memo'] ?? '';
-        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
+        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
+        _pendingUploadImages[index].confidence = result['confidence'] ?? '';
       });
     }
   }
@@ -234,20 +277,22 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
-      // Convert the image file to bytes
-      final bytes = await imageFile.readAsBytes();
+      // 画像をリサイズ
+      final resizedImageFile = await _resizeImage(File(imageFile.path));
 
-      // Save the image to the device's gallery
+      // リサイズされた画像をギャラリーに保存
+      final bytes = await resizedImageFile.readAsBytes();
       final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
 
       if (result['isSuccess']) {
         Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(File(imageFile.path), position);
+        await _showAnimalTypeMemoDialog(resizedImageFile, position);
       } else {
         print('Error saving image to gallery');
       }
     }
   }
+
 
   Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(
@@ -261,7 +306,8 @@ class _Local_CameraState extends State<Local_Camera> {
       String animalType = result['animalType'] ?? 'error';
       String traceType = result['traceType'] ?? 'error';
       String memo = result['memo'];
-      String elapsedForTrace = result['elapsed_for_trace'] ?? 'flesh';
+      String elapsedForTrace = result['elapsed_for_trace'] ?? '';
+      String confidence = result['confidence'] ?? '';
 
       setState(() {
         _pendingUploadImages.add(PhotoData(
@@ -272,6 +318,7 @@ class _Local_CameraState extends State<Local_Camera> {
           memo: memo,
           position: position,
           elapsedForTrace: elapsedForTrace,
+          confidence: confidence,
         ));
       });
     }
@@ -300,7 +347,7 @@ class _Local_CameraState extends State<Local_Camera> {
     for (var data in imagesCopy) {
       try {
         data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
-        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId);
+        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId,data.confidence);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
 
@@ -393,7 +440,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   Future<void> _saveToFirestore(Position position, String imageUrl,
-      String animalType, String memo, String elapsedForTrace, String traceType,String selectedUserId) async {
+      String animalType, String memo, String elapsedForTrace, String traceType, String selectedUserId, String confidence) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
@@ -404,8 +451,10 @@ class _Local_CameraState extends State<Local_Camera> {
       'ElapsedForTrace': elapsedForTrace,
       'TraceType': traceType,
       'User_ID': selectedUserId,
+      'Confidence': confidence, // 追加
     });
   }
+
 
   Future<bool> _isConnectedToNetwork() async {
     var connectivityResult = await (Connectivity().checkConnectivity());

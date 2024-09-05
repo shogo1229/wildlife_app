@@ -105,79 +105,66 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 画像を表示し、写真を撮影し、画像をアップロードするための UI
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
-            fit: BoxFit.cover, // 画面全体にフィットさせる
+    Widget build(BuildContext context) {
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: _pendingUploadImages.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Image.file(
-                          _pendingUploadImages[index].image,
-                          width: 120.0,
-                          height: 120.0,
-                          fit: BoxFit.cover,
-                        ),
-                        SizedBox(width: 16.0),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _pendingUploadImages.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      key: ValueKey(_pendingUploadImages[index].image.path),
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Image.file(
+                            _pendingUploadImages[index].image,
+                            width: 120.0,
+                            height: 120.0,
+                            fit: BoxFit.cover,
+                          ),
+                          SizedBox(width: 16.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}'),
+                                SizedBox(height: 4.0),
+                                Text('痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}'),
+                                SizedBox(height: 4.0),
+                                Text('メモ: ${_pendingUploadImages[index].memo}'),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
-                                style: TextStyle(fontSize: 14.0),
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.green[800]),
+                                onPressed: () => _editPhotoData(index),
                               ),
-                              SizedBox(height: 4.0),
-                              Text(
-                                '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
-                                style: TextStyle(fontSize: 14.0),
-                              ),
-                              SizedBox(height: 4.0),
-                              Text(
-                                'メモ: ${_pendingUploadImages[index].memo}',
-                                style: TextStyle(fontSize: 14.0),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _confirmDelete(index),
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.green[800]),
-                              onPressed: () {
-                                _editPhotoData(index);
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                _confirmDelete(index);
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
                     onPressed: _takePicture,
@@ -194,7 +181,7 @@ class _Local_CameraState extends State<Local_Camera> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _isUploading ? null : _uploadImages,  // アップロード中はボタンを無効化
+                    onPressed: _isUploading ? null : _uploadImages,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green[900],
@@ -216,12 +203,12 @@ class _Local_CameraState extends State<Local_Camera> {
                           ),
                   ),
                 ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
   Future<void> _editPhotoData(int index) async {
     Map<String, dynamic>? result = await showDialog(
@@ -277,22 +264,20 @@ class _Local_CameraState extends State<Local_Camera> {
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
-      // 画像をリサイズ
-      final resizedImageFile = await _resizeImage(File(imageFile.path));
+      final image = File(imageFile.path);
 
-      // リサイズされた画像をギャラリーに保存
-      final bytes = await resizedImageFile.readAsBytes();
+      // 画像をギャラリーに保存
+      final bytes = await image.readAsBytes();
       final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
 
       if (result['isSuccess']) {
         Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(resizedImageFile, position);
+        await _showAnimalTypeMemoDialog(image, position);
       } else {
         print('Error saving image to gallery');
       }
     }
   }
-
 
   Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
     Map<String, dynamic>? result = await showDialog(

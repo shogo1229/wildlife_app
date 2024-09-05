@@ -14,38 +14,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart'; // 追加
 import 'package:flutter/services.dart'; // 追加
 import 'dart:ui' as ui;
-
-Future<File> _resizeImage(File imageFile) async {
-  // 画像ファイルをバイトデータとして読み込む
-  final bytes = await imageFile.readAsBytes();
-  // バイトデータから画像をデコードする
-  final ui.Image originalImage = await decodeImageFromList(bytes);
-
-  // 新しい画像の幅と高さを半分に設定
-  final int newWidth = (originalImage.width / 2).round();
-  final int newHeight = (originalImage.height / 2).round();
-
-  // 画像をリサイズ
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-  final Paint paint = Paint();
-  final Rect src = Rect.fromLTWH(0, 0, originalImage.width.toDouble(), originalImage.height.toDouble());
-  final Rect dst = Rect.fromLTWH(0, 0, newWidth.toDouble(), newHeight.toDouble());
-
-  canvas.drawImageRect(originalImage, src, dst, paint);
-  final ui.Image resizedImage = await recorder.endRecording().toImage(newWidth, newHeight);
-
-  // リサイズされた画像をバイトデータに変換
-  final ByteData? resizedBytes = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
-  final Uint8List resizedImageData = resizedBytes!.buffer.asUint8List();
-
-  // リサイズされた画像を一時ファイルとして保存
-  final tempDir = Directory.systemTemp;
-  final resizedImageFile = await File('${tempDir.path}/resized_image.png').writeAsBytes(resizedImageData);
-
-  return resizedImageFile;
-}
-
 class Local_Camera extends StatefulWidget {
   @override
   _Local_CameraState createState() => _Local_CameraState();
@@ -57,7 +25,6 @@ class _Local_CameraState extends State<Local_Camera> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firebase Firestore
   late String _selectedUserId; // 選択されたユーザーのID
   bool _isUploading = false; // アップロード中かどうかを示すフラグ
-
   @override
   void initState() {
     super.initState();
@@ -210,104 +177,110 @@ class _Local_CameraState extends State<Local_Camera> {
       );
     }
 
-  Future<void> _editPhotoData(int index) async {
-    Map<String, dynamic>? result = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
-      },
-    );
+    Future<void> _editPhotoData(int index) async {
+      Map<String, dynamic>? result = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
+        },
+      );
 
-    if (result != null) {
-      setState(() {
-        _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
-        _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
-        _pendingUploadImages[index].memo = result['memo'] ?? '';
-        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
-        _pendingUploadImages[index].confidence = result['confidence'] ?? '';
-      });
-    }
-  }
-
-  Future<void> _confirmDelete(int index) async {
-    bool? deleteConfirmed = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('取消の確認'),
-          content: Text('この写真を取り消しますか？'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: Text('いいえ'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: Text('はい', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (deleteConfirmed == true) {
-      setState(() {
-        _pendingUploadImages.removeAt(index);
-      });
-    }
-  }
-
-  Future<void> _takePicture() async {
-    final imageFile = await _picker.pickImage(source: ImageSource.camera);
-    if (imageFile != null) {
-      final image = File(imageFile.path);
-
-      // 画像をギャラリーに保存
-      final bytes = await image.readAsBytes();
-      final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
-
-      if (result['isSuccess']) {
-        Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(image, position);
-      } else {
-        print('Error saving image to gallery');
+      if (result != null) {
+        setState(() {
+          _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
+          _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
+          _pendingUploadImages[index].memo = result['memo'] ?? '';
+          _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
+          _pendingUploadImages[index].confidence = result['confidence'] ?? '';
+        });
       }
     }
-  }
 
-  Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
-    Map<String, dynamic>? result = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: image);
-      },
-    );
+    Future<void> _confirmDelete(int index) async {
+      bool? deleteConfirmed = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('取消の確認'),
+            content: Text('この写真を取り消しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: Text('いいえ'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: Text('はい', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          );
+        },
+      );
 
-    if (result != null) {
-      String animalType = result['animalType'] ?? 'error';
-      String traceType = result['traceType'] ?? 'error';
-      String memo = result['memo'];
-      String elapsedForTrace = result['elapsed_for_trace'] ?? '';
-      String confidence = result['confidence'] ?? '';
-
-      setState(() {
-        _pendingUploadImages.add(PhotoData(
-          image: image,
-          imageUrl: '',
-          animalType: animalType,
-          traceType: traceType,
-          memo: memo,
-          position: position,
-          elapsedForTrace: elapsedForTrace,
-          confidence: confidence,
-        ));
-      });
+      if (deleteConfirmed == true) {
+        setState(() {
+          _pendingUploadImages.removeAt(index);
+        });
+      }
     }
-  }
+
+    Future<void> _takePicture() async {
+      final imageFile = await _picker.pickImage(source: ImageSource.camera);
+      if (imageFile != null) {
+        final image = File(imageFile.path);
+
+        // 撮影日時を取得
+        final DateTime captureTime = DateTime.now();
+
+        // 画像をギャラリーに保存
+        final bytes = await image.readAsBytes();
+        final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
+
+        if (result['isSuccess']) {
+          Position position = await _getCurrentLocation();
+          await _showAnimalTypeMemoDialog(image, position, captureTime); // 撮影日時を渡す
+        } else {
+          print('Error saving image to gallery');
+        }
+      }
+    }
+
+
+    Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime) async {
+      Map<String, dynamic>? result = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AnimalTypeMemoWizard(image: image);
+        },
+      );
+
+      if (result != null) {
+        String animalType = result['animalType'] ?? 'error';
+        String traceType = result['traceType'] ?? 'error';
+        String memo = result['memo'];
+        String elapsedForTrace = result['elapsed_for_trace'] ?? '';
+        String confidence = result['confidence'] ?? '';
+
+        setState(() {
+          _pendingUploadImages.add(PhotoData(
+            image: image,
+            imageUrl: '',
+            animalType: animalType,
+            traceType: traceType,
+            memo: memo,
+            position: position,
+            elapsedForTrace: elapsedForTrace,
+            confidence: confidence,
+            captureTime: captureTime, // 撮影日時を保存
+          ));
+        });
+      }
+    }
+
 
   Future<void> _uploadImages() async {
     if (!(await _isConnectedToNetwork())) {
@@ -331,7 +304,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
     for (var data in imagesCopy) {
       try {
-        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
+        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position,data.captureTime);
         await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId,data.confidence);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
@@ -414,15 +387,18 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  Future<String> _uploadImage(
-      File image, String animalType, Position position) async {
+  Future<String> _uploadImage(File image, String animalType, Position position, DateTime captureTime) async {
     final storage = FirebaseStorage.instance;
     final folderPath = 'images/$animalType';
-    final ref = storage.ref().child('$folderPath/${DateTime.now()}.jpg');
+
+    // 撮影時の日時をファイル名として使用
+    final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-'); // Firebaseのファイル名に':'は使用できないため、':'を'-'に置換
+    final ref = storage.ref().child('$folderPath/$formattedTime.jpg');
 
     await ref.putFile(image);
     return await ref.getDownloadURL();
   }
+
 
   Future<void> _saveToFirestore(Position position, String imageUrl,
       String animalType, String memo, String elapsedForTrace, String traceType, String selectedUserId, String confidence) async {

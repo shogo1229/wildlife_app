@@ -11,6 +11,7 @@ class PhotoData {
   String traceType;
   String elapsedForTrace;
   String confidence;
+  final DateTime captureTime;
 
   PhotoData({
     required this.image,
@@ -21,5 +22,6 @@ class PhotoData {
     required this.traceType,
     required this.elapsedForTrace,
     required this.confidence,
+    required this.captureTime,
   });
 }

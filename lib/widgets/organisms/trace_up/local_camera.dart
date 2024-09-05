@@ -14,38 +14,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart'; // 追加
 import 'package:flutter/services.dart'; // 追加
 import 'dart:ui' as ui;
-
-Future<File> _resizeImage(File imageFile) async {
-  // 画像ファイルをバイトデータとして読み込む
-  final bytes = await imageFile.readAsBytes();
-  // バイトデータから画像をデコードする
-  final ui.Image originalImage = await decodeImageFromList(bytes);
-
-  // 新しい画像の幅と高さを半分に設定
-  final int newWidth = (originalImage.width / 2).round();
-  final int newHeight = (originalImage.height / 2).round();
-
-  // 画像をリサイズ
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
-  final Paint paint = Paint();
-  final Rect src = Rect.fromLTWH(0, 0, originalImage.width.toDouble(), originalImage.height.toDouble());
-  final Rect dst = Rect.fromLTWH(0, 0, newWidth.toDouble(), newHeight.toDouble());
-
-  canvas.drawImageRect(originalImage, src, dst, paint);
-  final ui.Image resizedImage = await recorder.endRecording().toImage(newWidth, newHeight);
-
-  // リサイズされた画像をバイトデータに変換
-  final ByteData? resizedBytes = await resizedImage.toByteData(format: ui.ImageByteFormat.png);
-  final Uint8List resizedImageData = resizedBytes!.buffer.asUint8List();
-
-  // リサイズされた画像を一時ファイルとして保存
-  final tempDir = Directory.systemTemp;
-  final resizedImageFile = await File('${tempDir.path}/resized_image.png').writeAsBytes(resizedImageData);
-
-  return resizedImageFile;
-}
-
 class Local_Camera extends StatefulWidget {
   @override
   _Local_CameraState createState() => _Local_CameraState();
@@ -57,7 +25,6 @@ class _Local_CameraState extends State<Local_Camera> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firebase Firestore
   late String _selectedUserId; // 選択されたユーザーのID
   bool _isUploading = false; // アップロード中かどうかを示すフラグ
-
   @override
   void initState() {
     super.initState();
@@ -105,79 +72,66 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    // 画像を表示し、写真を撮影し、画像をアップロードするための UI
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
-            fit: BoxFit.cover, // 画面全体にフィットさせる
+    Widget build(BuildContext context) {
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: _pendingUploadImages.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Image.file(
-                          _pendingUploadImages[index].image,
-                          width: 120.0,
-                          height: 120.0,
-                          fit: BoxFit.cover,
-                        ),
-                        SizedBox(width: 16.0),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _pendingUploadImages.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      key: ValueKey(_pendingUploadImages[index].image.path),
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          Image.file(
+                            _pendingUploadImages[index].image,
+                            width: 120.0,
+                            height: 120.0,
+                            fit: BoxFit.cover,
+                          ),
+                          SizedBox(width: 16.0),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}'),
+                                SizedBox(height: 4.0),
+                                Text('痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}'),
+                                SizedBox(height: 4.0),
+                                Text('メモ: ${_pendingUploadImages[index].memo}'),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                '獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}',
-                                style: TextStyle(fontSize: 14.0),
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.green[800]),
+                                onPressed: () => _editPhotoData(index),
                               ),
-                              SizedBox(height: 4.0),
-                              Text(
-                                '痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}',
-                                style: TextStyle(fontSize: 14.0),
-                              ),
-                              SizedBox(height: 4.0),
-                              Text(
-                                'メモ: ${_pendingUploadImages[index].memo}',
-                                style: TextStyle(fontSize: 14.0),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _confirmDelete(index),
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.green[800]),
-                              onPressed: () {
-                                _editPhotoData(index);
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                _confirmDelete(index);
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
                     onPressed: _takePicture,
@@ -194,7 +148,7 @@ class _Local_CameraState extends State<Local_Camera> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: _isUploading ? null : _uploadImages,  // アップロード中はボタンを無効化
+                    onPressed: _isUploading ? null : _uploadImages,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green[900],
@@ -216,113 +170,125 @@ class _Local_CameraState extends State<Local_Camera> {
                           ),
                   ),
                 ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _editPhotoData(int index) async {
-    Map<String, dynamic>? result = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
-      },
-    );
-
-    if (result != null) {
-      setState(() {
-        _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
-        _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
-        _pendingUploadImages[index].memo = result['memo'] ?? '';
-        _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
-        _pendingUploadImages[index].confidence = result['confidence'] ?? '';
-      });
+      );
     }
-  }
 
-  Future<void> _confirmDelete(int index) async {
-    bool? deleteConfirmed = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('取消の確認'),
-          content: Text('この写真を取り消しますか？'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: Text('いいえ'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: Text('はい', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
+    Future<void> _editPhotoData(int index) async {
+      Map<String, dynamic>? result = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
+        },
+      );
 
-    if (deleteConfirmed == true) {
-      setState(() {
-        _pendingUploadImages.removeAt(index);
-      });
-    }
-  }
-
-  Future<void> _takePicture() async {
-    final imageFile = await _picker.pickImage(source: ImageSource.camera);
-    if (imageFile != null) {
-      // 画像をリサイズ
-      final resizedImageFile = await _resizeImage(File(imageFile.path));
-
-      // リサイズされた画像をギャラリーに保存
-      final bytes = await resizedImageFile.readAsBytes();
-      final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
-
-      if (result['isSuccess']) {
-        Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(resizedImageFile, position);
-      } else {
-        print('Error saving image to gallery');
+      if (result != null) {
+        setState(() {
+          _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
+          _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
+          _pendingUploadImages[index].memo = result['memo'] ?? '';
+          _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
+          _pendingUploadImages[index].confidence = result['confidence'] ?? '';
+        });
       }
     }
-  }
 
+    Future<void> _confirmDelete(int index) async {
+      bool? deleteConfirmed = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('取消の確認'),
+            content: Text('この写真を取り消しますか？'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: Text('いいえ'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: Text('はい', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          );
+        },
+      );
 
-  Future<void> _showAnimalTypeMemoDialog(File image, Position position) async {
-    Map<String, dynamic>? result = await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: image);
-      },
-    );
-
-    if (result != null) {
-      String animalType = result['animalType'] ?? 'error';
-      String traceType = result['traceType'] ?? 'error';
-      String memo = result['memo'];
-      String elapsedForTrace = result['elapsed_for_trace'] ?? '';
-      String confidence = result['confidence'] ?? '';
-
-      setState(() {
-        _pendingUploadImages.add(PhotoData(
-          image: image,
-          imageUrl: '',
-          animalType: animalType,
-          traceType: traceType,
-          memo: memo,
-          position: position,
-          elapsedForTrace: elapsedForTrace,
-          confidence: confidence,
-        ));
-      });
+      if (deleteConfirmed == true) {
+        setState(() {
+          _pendingUploadImages.removeAt(index);
+        });
+      }
     }
-  }
+
+    Future<void> _takePicture() async {
+      final imageFile = await _picker.pickImage(source: ImageSource.camera);
+      if (imageFile != null) {
+        final DateTime captureTime = DateTime.now();
+        
+        // ファイル名に使用する日時をフォーマット
+        final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-');
+
+        // 撮影した画像のパスを取得
+        final image = File(imageFile.path);
+
+        // ローカルに保存するための新しいパス（撮影時刻をファイル名に使用）
+        final String newPath = '${image.parent.path}/$formattedTime.jpg';
+        final File newImage = await image.copy(newPath); // 新しいパスにファイルをコピー
+
+        // 画像をギャラリーに保存
+        final bytes = await newImage.readAsBytes();
+        final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes), name: formattedTime);
+
+        if (result['isSuccess']) {
+          Position position = await _getCurrentLocation();
+          await _showAnimalTypeMemoDialog(newImage, position, captureTime); // 撮影日時を渡す
+        } else {
+          print('ローカルへの保存に失敗しました');
+        }
+      }
+    }
+
+
+
+    Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime) async {
+      Map<String, dynamic>? result = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AnimalTypeMemoWizard(image: image);
+        },
+      );
+
+      if (result != null) {
+        String animalType = result['animalType'] ?? 'error';
+        String traceType = result['traceType'] ?? 'error';
+        String memo = result['memo'];
+        String elapsedForTrace = result['elapsed_for_trace'] ?? '';
+        String confidence = result['confidence'] ?? '';
+
+        setState(() {
+          _pendingUploadImages.add(PhotoData(
+            image: image,
+            imageUrl: '',
+            animalType: animalType,
+            traceType: traceType,
+            memo: memo,
+            position: position,
+            elapsedForTrace: elapsedForTrace,
+            confidence: confidence,
+            captureTime: captureTime, // 撮影日時を保存
+          ));
+        });
+      }
+    }
+
 
   Future<void> _uploadImages() async {
     if (!(await _isConnectedToNetwork())) {
@@ -346,7 +312,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
     for (var data in imagesCopy) {
       try {
-        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position);
+        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position,data.captureTime);
         await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType,_selectedUserId,data.confidence);
         await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
         await _updateAnimalPoints(_selectedUserId, data.animalType);
@@ -429,15 +395,25 @@ class _Local_CameraState extends State<Local_Camera> {
     }
   }
 
-  Future<String> _uploadImage(
-      File image, String animalType, Position position) async {
+  Future<String> _uploadImage(File image, String animalType, Position position, DateTime captureTime) async {
     final storage = FirebaseStorage.instance;
     final folderPath = 'images/$animalType';
-    final ref = storage.ref().child('$folderPath/${DateTime.now()}.jpg');
 
-    await ref.putFile(image);
+    // 撮影時の日時をファイル名として使用
+    final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-');
+    final ref = storage.ref().child('$folderPath/$formattedTime.jpg');
+
+    // メディアタイプをimage/jpegとして指定
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+
+    // ファイルをアップロード
+    await ref.putFile(image, metadata);
+
+    // 画像のダウンロードURLを取得
     return await ref.getDownloadURL();
   }
+
+
 
   Future<void> _saveToFirestore(Position position, String imageUrl,
       String animalType, String memo, String elapsedForTrace, String traceType, String selectedUserId, String confidence) async {

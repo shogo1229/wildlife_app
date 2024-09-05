@@ -231,23 +231,31 @@ class _Local_CameraState extends State<Local_Camera> {
     Future<void> _takePicture() async {
       final imageFile = await _picker.pickImage(source: ImageSource.camera);
       if (imageFile != null) {
+        final DateTime captureTime = DateTime.now();
+        
+        // ファイル名に使用する日時をフォーマット
+        final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-');
+
+        // 撮影した画像のパスを取得
         final image = File(imageFile.path);
 
-        // 撮影日時を取得
-        final DateTime captureTime = DateTime.now();
+        // ローカルに保存するための新しいパス（撮影時刻をファイル名に使用）
+        final String newPath = '${image.parent.path}/$formattedTime.jpg';
+        final File newImage = await image.copy(newPath); // 新しいパスにファイルをコピー
 
         // 画像をギャラリーに保存
-        final bytes = await image.readAsBytes();
-        final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes));
+        final bytes = await newImage.readAsBytes();
+        final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes), name: formattedTime);
 
         if (result['isSuccess']) {
           Position position = await _getCurrentLocation();
-          await _showAnimalTypeMemoDialog(image, position, captureTime); // 撮影日時を渡す
+          await _showAnimalTypeMemoDialog(newImage, position, captureTime); // 撮影日時を渡す
         } else {
-          print('Error saving image to gallery');
+          print('ローカルへの保存に失敗しました');
         }
       }
     }
+
 
 
     Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime) async {
@@ -392,12 +400,19 @@ class _Local_CameraState extends State<Local_Camera> {
     final folderPath = 'images/$animalType';
 
     // 撮影時の日時をファイル名として使用
-    final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-'); // Firebaseのファイル名に':'は使用できないため、':'を'-'に置換
+    final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-');
     final ref = storage.ref().child('$folderPath/$formattedTime.jpg');
 
-    await ref.putFile(image);
+    // メディアタイプをimage/jpegとして指定
+    final metadata = SettableMetadata(contentType: 'image/jpeg');
+
+    // ファイルをアップロード
+    await ref.putFile(image, metadata);
+
+    // 画像のダウンロードURLを取得
     return await ref.getDownloadURL();
   }
+
 
 
   Future<void> _saveToFirestore(Position position, String imageUrl,

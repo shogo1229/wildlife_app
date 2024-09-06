@@ -413,6 +413,37 @@ class _Local_CameraState extends State<Local_Camera> {
       return;
     }
 
+    // ネットワーク速度が安定しているか確認するメッセージ
+    bool confirmUpload = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('回線速度確認'),
+          content: Text('回線速度が安定した場所にいますか？安定している場合はアップロードを続行してください。'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // 「いいえ」選択時
+              },
+              child: Text('いいえ'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // 「はい」選択時
+              },
+              child: Text('はい'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!confirmUpload) {
+      // ユーザーが「いいえ」を選択した場合、アップロード中止
+      return;
+    }
+
+    // アップロードを開始する
     setState(() {
       _isUploading = true; // アップロード中であることを示す
     });
@@ -450,6 +481,7 @@ class _Local_CameraState extends State<Local_Camera> {
       );
     }
   }
+
 
   // ネットワーク接続確認機能
   Future<bool> _isConnectedToNetwork() async {

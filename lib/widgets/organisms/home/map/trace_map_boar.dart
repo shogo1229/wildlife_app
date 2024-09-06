@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -16,6 +17,10 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
   final MapController mapController = MapController();
   LatLng currentLocation = LatLng(0, 0);
   String currentLocationText = 'Loading...';
+  bool isLocationLoading = true;
+  bool isMapLoading = true; // Map loading state
+  bool isMapLoaded = false; // Map loaded state
+  Timer? retryTimer; // Timer for retrying the map loading
 
   Location location = Location();
 
@@ -28,11 +33,10 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
       if (mounted) {
         setState(() {
           mapController.move(currentLocation, 16.0);
+          isLocationLoading = false; // Location is loaded
         });
       }
     });
-
-    fetchUserSpecificData();
 
     location.onLocationChanged.listen((LocationData? newLocation) {
       if (mounted) {
@@ -46,6 +50,15 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
         });
       }
     });
+
+    // Start a retry timer to attempt loading the map again when network recovers
+    startRetryTimer();
+  }
+
+  @override
+  void dispose() {
+    retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> getLocation() async {
@@ -53,7 +66,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
     try {
       _locationData = await location.getLocation();
     } catch (e) {
-      print('位置情報の取得に失敗しました: $e');
+      debugPrint('位置情報の取得に失敗しました: $e');
     }
 
     if (_locationData != null) {
@@ -70,7 +83,24 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       firebaseModel.fetchFirebase_data(user.uid);
+      setState(() {
+        // Firebase data has been loaded
+      });
     }
+  }
+
+  void startRetryTimer() {
+    retryTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (!isMapLoaded) {
+        debugPrint('Attempting to reload the map...');
+        setState(() {
+          // Try reloading the map (can simulate connection recovery)
+          isMapLoading = false;
+          isMapLoaded = true;
+        });
+        fetchUserSpecificData();
+      }
+    });
   }
 
   List<Marker> getFilteredMarkers() {
@@ -166,44 +196,78 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Column(
+        body: Stack(
           children: [
-            Expanded(
-              child: FlutterMap(
-                mapController: mapController,
-                options: MapOptions(
-                  center: currentLocation,
-                  zoom: 0.0,
-                  interactiveFlags: InteractiveFlag.all,
-                  enableScrollWheel: true,
-                  scrollWheelVelocity: 0.00001,
+            FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                center: currentLocation,
+                zoom: 16.0,
+                interactiveFlags: InteractiveFlag.all,
+                enableScrollWheel: true,
+                scrollWheelVelocity: 0.00001,
+                onMapReady: () {
+                  setState(() {
+                    isMapLoading = false; // OSM tiles loaded successfully
+                    isMapLoaded = true; // Map is fully loaded
+                    fetchUserSpecificData(); // Fetch Firebase data when map is ready
+                    retryTimer?.cancel(); // Stop retrying once the map is loaded
+                  });
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      "https://tile.openstreetmap.jp/{z}/{x}/{y}.png",
+                  userAgentPackageName: 'land_place',
+                  errorTileCallback: (tile, error, stackTrace) {
+                    debugPrint('Failed to load OSM tile: $error');
+                    setState(() {
+                      isMapLoading = true; // OSM tiles failed to load
+                    });
+                  },
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        "https://tile.openstreetmap.jp/{z}/{x}/{y}.png",
-                    userAgentPackageName: 'land_place',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: currentLocation,
-                        width: 200,
-                        height: 200,
-                        child: Icon(
-                          Icons.location_on,
-                          color: Colors.blue,
-                          size: 50,
-                        ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: currentLocation,
+                      width: 200,
+                      height: 200,
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.blue,
+                        size: 50,
                       ),
-                      ...getFilteredMarkers(),
+                    ),
+                    if (isMapLoaded) ...getFilteredMarkers(), // Show markers only when the map is loaded
+                  ],
+                ),
+              ],
+            ),
+            if (isLocationLoading || isMapLoading) // Display cover if location or map is loading
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        '現在地を取得中です。電波状況が悪い場合、現在地や地図は表示されません。',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-            SizedBox(
-              width: double.infinity, // ボタンを画面いっぱいに広げる
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
               child: ElevatedButton(
                 onPressed: warpToCurrentLocation,
                 style: ElevatedButton.styleFrom(
@@ -212,8 +276,7 @@ class _FlutterMapWithLocationState extends State<FlutterMAP_Boar> {
                 ),
                 child: Text('現在地に移動'),
               ),
-            )
-
+            ),
           ],
         ),
       ),

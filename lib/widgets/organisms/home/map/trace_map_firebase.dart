@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -16,29 +17,53 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   final MapController mapController = MapController();
   LatLng currentLocation = LatLng(0, 0);
   String currentLocationText = 'Loading...';
+  bool isLocationLoading = true;
+  bool isMapLoading = true; // Map loading state
+  bool isMapLoaded = false; // Map fully loaded flag
+  Timer? retryTimer; // Timer to retry loading the map
 
   Location location = Location();
-
   GetFireBaseModel firebaseModel = GetFireBaseModel();
 
   @override
   void initState() {
     super.initState();
-    getLocation().then((_) {
-      mapController.move(currentLocation, 16.0);
-    });
-    fetchUserSpecificData(); // Fetch data with User_ID
 
-    location.onLocationChanged.listen((LocationData? newLocation) {
-      setState(() {
-        if (newLocation != null) {
-          currentLocation =
-              LatLng(newLocation.latitude!, newLocation.longitude!);
-          currentLocationText =
-              'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
-        }
-      });
+    // Get user location and update map position
+    getLocation().then((_) {
+      if (mounted) {
+        setState(() {
+          mapController.move(currentLocation, 16.0);
+          isLocationLoading = false;
+        });
+      }
     });
+
+    // Fetch Firebase data for the user
+    fetchUserSpecificData();
+
+    // Listen for location changes
+    location.onLocationChanged.listen((LocationData? newLocation) {
+      if (mounted) {
+        setState(() {
+          if (newLocation != null) {
+            currentLocation =
+                LatLng(newLocation.latitude!, newLocation.longitude!);
+            currentLocationText =
+                'Latitude: ${newLocation.latitude}, Longitude: ${newLocation.longitude}';
+          }
+        });
+      }
+    });
+
+    // Start retry timer to reload the map if necessary
+    startRetryTimer();
+  }
+
+  @override
+  void dispose() {
+    retryTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> getLocation() async {
@@ -46,13 +71,14 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
     try {
       _locationData = await location.getLocation();
     } catch (e) {
-      print('Failed to get location: $e');
+      debugPrint('Failed to get location: $e');
     }
 
     if (_locationData != null) {
       setState(() {
         currentLocation =
-            LatLng(_locationData!.latitude!, _locationData.longitude!);
+            LatLng(_locationData!.latitude!, _locationData!.longitude!);
+        isLocationLoading = false; // Set location loading to false after getting the location
       });
     }
   }
@@ -60,8 +86,21 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   Future<void> fetchUserSpecificData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      await firebaseModel.fetchFirebase_data(user.uid); // Pass the user ID to fetchFirebase_data
+      await firebaseModel.fetchFirebase_data(user.uid); // Fetch data with User_ID
     }
+  }
+
+  void startRetryTimer() {
+    retryTimer = Timer.periodic(Duration(seconds: 10), (timer) {
+      if (!isMapLoaded) {
+        debugPrint('Attempting to reload the map...');
+        setState(() {
+          isMapLoading = false;
+          isMapLoaded = true;
+        });
+        fetchUserSpecificData();
+      }
+    });
   }
 
   void warpToCurrentLocation() {
@@ -72,36 +111,49 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Column(
+        body: Stack(
           children: [
-            Expanded(
-              child: FlutterMap(
-                mapController: mapController,
-                options: MapOptions(
-                  center: currentLocation,
-                  zoom: 0.0,
-                  interactiveFlags: InteractiveFlag.all,
-                  enableScrollWheel: true,
-                  scrollWheelVelocity: 0.00001,
+            FlutterMap(
+              mapController: mapController,
+              options: MapOptions(
+                center: currentLocation,
+                zoom: 16.0,
+                interactiveFlags: InteractiveFlag.all,
+                enableScrollWheel: true,
+                scrollWheelVelocity: 0.00001,
+                onMapReady: () {
+                  setState(() {
+                    isMapLoading = false; // Set map loading to false once map is ready
+                    isMapLoaded = true; // Map is fully loaded
+                    retryTimer?.cancel(); // Stop retrying when map is loaded
+                  });
+                },
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      "https://tile.openstreetmap.jp/{z}/{x}/{y}.png",
+                  userAgentPackageName: 'land_place',
+                  errorTileCallback: (tile, error, stackTrace) {
+                    debugPrint('Failed to load OSM tile: $error');
+                    setState(() {
+                      isMapLoading = true; // Set map loading failure
+                    });
+                  },
                 ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        "https://tile.openstreetmap.jp/{z}/{x}/{y}.png",
-                    userAgentPackageName: 'land_place',
-                  ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: currentLocation,
-                        width: 200,
-                        height: 200,
-                        child: Icon(
-                          Icons.location_on,
-                          color: Colors.blue,
-                          size: 50,
-                        ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: currentLocation,
+                      width: 200,
+                      height: 200,
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.blue,
+                        size: 50,
                       ),
+                    ),
+                    if (isMapLoaded) // Show markers only after the map is loaded
                       ...firebaseModel.firebase_data.map((data) {
                         Widget markerImage;
                         if (data.animalType == 'Boar') {
@@ -206,13 +258,35 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                           ),
                         );
                       }),
+                  ],
+                ),
+              ],
+            ),
+            if (isLocationLoading || isMapLoading) // Display cover if location or map is loading
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 18),
+                      Text(
+                        '現在地を取得中です。電波状況が悪い場合、現在地や地図は表示されません。',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-            SizedBox(
-              width: double.infinity, // ボタンを画面いっぱいに広げる
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
               child: ElevatedButton(
                 onPressed: warpToCurrentLocation,
                 style: ElevatedButton.styleFrom(
@@ -221,8 +295,7 @@ class _FlutterMapWithLocationState extends State<FlutterMapFireBase> {
                 ),
                 child: Text('現在地に移動'),
               ),
-            )
-
+            ),
           ],
         ),
       ),

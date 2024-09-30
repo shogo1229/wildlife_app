@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
 
 class AnimalTypeMemoWizard extends StatefulWidget {
   final File image;
@@ -20,7 +19,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
   TextEditingController _memoController = TextEditingController();
 
   void _nextStep() {
-    if ((_animalType == 'start_flag' || _animalType == 'stop_flag') && _currentStep == 0) {
+    if ((_animalType == 'start_flag' || _animalType == 'stop_flag') &&
+        _currentStep == 0) {
       _traceType = 'camera';
       _completeSelection(context);
     } else if (_currentStep < 2) {
@@ -118,13 +118,16 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildAnimalTypeButton('lib/assets/images/Boar.png','イノシシ','Boar'),
-            _buildAnimalTypeButton('lib/assets/images/Deer.png','ニホンジカ','Deer'),
+            _buildAnimalTypeButton(
+                'lib/assets/images/Boar.png', 'イノシシ', 'Boar'),
+            _buildAnimalTypeButton(
+                'lib/assets/images/Deer.png', 'ニホンジカ', 'Deer'),
           ],
         ),
         SizedBox(height: 20.0),
         Center(
-          child: _buildAnimalTypeButton('lib/assets/images/Other.png','その他/不明','Other'),
+          child: _buildAnimalTypeButton(
+              'lib/assets/images/Other.png', 'その他/不明', 'Other'),
         ),
         SizedBox(height: 20.0),
         Divider(color: Colors.grey),
@@ -154,9 +157,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(16.0),
-          color: _animalType == type
-              ? Colors.green[100]
-              : Colors.transparent,
+          color:
+              _animalType == type ? Colors.green[100] : Colors.transparent,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -173,7 +175,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
-                color: _animalType == type ? Colors.green[800] : Colors.black,
+                color:
+                    _animalType == type ? Colors.green[800] : Colors.black,
               ),
             ),
           ],
@@ -193,7 +196,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         height: 140.0,
         decoration: BoxDecoration(
           border: Border.all(
-            color: _animalType == 'start_flag' ? Colors.green[800]! : Colors.grey,
+            color: _animalType == 'start_flag'
+                ? Colors.green[800]!
+                : Colors.grey,
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(16.0),
@@ -207,14 +212,18 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             Icon(
               Icons.access_time,
               size: 60.0,
-              color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+              color: _animalType == 'start_flag'
+                  ? Colors.green[800]
+                  : Colors.green,
             ),
             SizedBox(height: 8.0),
             Text(
               '調査開始',
               style: TextStyle(
                 fontSize: 16.0,
-                color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+                color: _animalType == 'start_flag'
+                    ? Colors.green[800]
+                    : Colors.green,
               ),
             ),
           ],
@@ -234,7 +243,9 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         height: 140.0,
         decoration: BoxDecoration(
           border: Border.all(
-            color: _animalType == 'stop_flag' ? Colors.green[800]! : Colors.grey,
+            color: _animalType == 'stop_flag'
+                ? Colors.green[800]!
+                : Colors.grey,
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(16.0),
@@ -248,14 +259,18 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             Icon(
               Icons.stop_circle,
               size: 60.0,
-              color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+              color: _animalType == 'stop_flag'
+                  ? Colors.green[800]
+                  : Colors.red,
             ),
             SizedBox(height: 8.0),
             Text(
               '調査終了',
               style: TextStyle(
                 fontSize: 16.0,
-                color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+                color: _animalType == 'stop_flag'
+                    ? Colors.green[800]
+                    : Colors.red,
               ),
             ),
           ],
@@ -283,12 +298,18 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               spacing: 20.0,
               runSpacing: 20.0,
               children: [
-                _buildTraceTypeButton('足跡', 'trace_footprint', Icons.pets), 
-                _buildTraceTypeButton('糞', 'trace_dropping', Icons.delete_sweep),
-                _buildTraceTypeButton('ぬた場', 'trace_swamp', Icons.water), 
-                _buildTraceTypeButton('泥こすり痕', 'trace_mudscrub', Icons.pool), 
-                _buildTraceTypeButton('角/牙 擦り痕', 'trace_hornscrub', Icons.park), 
-                _buildTraceTypeButton('その他', 'trace_others', Icons.filter_hdr), 
+                _buildTraceTypeButton(
+                    '足跡', 'trace_footprint', Icons.pets),
+                _buildTraceTypeButton(
+                    '糞', 'trace_dropping', Icons.delete_sweep),
+                _buildTraceTypeButton(
+                    'ぬた場', 'trace_swamp', Icons.water),
+                _buildTraceTypeButton(
+                    '泥こすり痕', 'trace_mudscrub', Icons.pool),
+                _buildTraceTypeButton(
+                    '角/牙 擦り痕', 'trace_hornscrub', Icons.park),
+                _buildTraceTypeButton(
+                    'その他', 'trace_others', Icons.filter_hdr),
               ],
             ),
           ),
@@ -346,9 +367,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
             width: 2.0,
           ),
           borderRadius: BorderRadius.circular(16.0),
-          color: _traceType == type
-              ? Colors.green[100]
-              : Colors.transparent,
+          color:
+              _traceType == type ? Colors.green[100] : Colors.transparent,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -364,7 +384,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
-                color: _traceType == type ? Colors.green[800] : Colors.black,
+                color:
+                    _traceType == type ? Colors.green[800] : Colors.black,
               ),
             ),
           ],
@@ -457,7 +478,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
-
   Widget _buildNavigationButtons() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -468,7 +488,8 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
               onPressed: _previousStep,
               child: Text('前へ'),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
                 textStyle: TextStyle(
                   fontSize: 22.0,
                 ),

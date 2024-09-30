@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:convert'; // JSON操作のために追加
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,12 +11,10 @@ import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart'; 
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:convert';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:path_provider/path_provider.dart'; // 追加
 import 'package:permission_handler/permission_handler.dart';
-import 'package:fl_chart/fl_chart.dart'; // fl_chartパッケージの追加
+import 'package:fl_chart/fl_chart.dart';
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -24,7 +22,6 @@ class Local_Camera extends StatefulWidget {
 }
 
 class _Local_CameraState extends State<Local_Camera> {
-  static List<PhotoData> _pendingUploadImages = []; // アップロード待ちの写真データのリスト
   final ImagePicker _picker = ImagePicker(); // 画像選択ライブラリ
   final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firebase Firestore
   late String _selectedUserId; // 選択されたユーザーのID
@@ -48,7 +45,7 @@ class _Local_CameraState extends State<Local_Camera> {
       case 'trace_mudscrub':
         return '泥こすり痕';
       case 'trace_hornscrub':
-        return '泥こすり痕';
+        return '角/牙 擦り痕';
       case 'trace_others':
         return 'その他';
       case 'camera':
@@ -76,124 +73,152 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // 有効な痕跡数をカウントするメソッド
-  int _getValidTraceCount() {
-    return _pendingUploadImages
+  Future<int> _getValidTraceCount() async {
+    List<PhotoData> traces = await _loadTraces();
+    return traces
         .where((photo) =>
-            photo.animalType != 'start_flag' && photo.animalType != 'stop_flag')
+            photo.animalType != 'start_flag' &&
+            photo.animalType != 'stop_flag' &&
+            photo.uploadedFlag == 0)
         .length;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Column(
-          children: [
-            // 痕跡の撮影枚数とサークルチャートを表示するカード
-            _buildTraceCountCard(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _pendingUploadImages.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    key: ValueKey(_pendingUploadImages[index].image.path),
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        Image.file(
-                          _pendingUploadImages[index].image,
-                          width: 120.0,
-                          height: 120.0,
-                          fit: BoxFit.cover,
-                        ),
-                        SizedBox(width: 16.0),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      body: FutureBuilder<List<PhotoData>>(
+        future: _loadTraces(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            // ローディング中
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            // エラー発生時
+            return Center(child: Text('エラーが発生しました'));
+          } else {
+            // データが存在する場合
+            List<PhotoData> traces = snapshot.data!;
+            return Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/images/bg_image.png'), // 背景画像を指定
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // 痕跡の撮影枚数とサークルチャートを表示するカード
+                  _buildTraceCountCard(traces),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: traces.length,
+                      itemBuilder: (context, index) {
+                        PhotoData data = traces[index];
+                        return Card(
+                          key: ValueKey(data.image.path),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 16.0),
+                          child: Row(
                             children: [
-                              Text('獣種: ${getAnimalType(_pendingUploadImages[index].animalType)}'),
-                              SizedBox(height: 4.0),
-                              Text('痕跡種: ${getTraceType(_pendingUploadImages[index].traceType)}'),
-                              SizedBox(height: 4.0),
-                              Text('メモ: ${_pendingUploadImages[index].memo}'),
+                              Image.file(
+                                data.image,
+                                width: 120.0,
+                                height: 120.0,
+                                fit: BoxFit.cover,
+                              ),
+                              SizedBox(width: 16.0),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('獣種: ${getAnimalType(data.animalType)}'),
+                                    SizedBox(height: 4.0),
+                                    Text('痕跡種: ${getTraceType(data.traceType)}'),
+                                    SizedBox(height: 4.0),
+                                    Text('メモ: ${data.memo}'),
+                                    SizedBox(height: 4.0),
+                                    Text('投稿済み: ${data.uploadedFlag == 1 ? "はい" : "いいえ"}'),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.edit,
+                                        color: Colors.green[800]),
+                                    onPressed: () => _editPhotoData(index, data),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _confirmDelete(index),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
+                        );
+                      },
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _takePicture,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green[900],
+                          foregroundColor: Colors.white,
                         ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Row(
                           children: [
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.green[800]),
-                              onPressed: () => _editPhotoData(index),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _confirmDelete(index),
-                            ),
+                            Icon(Icons.camera),
+                            SizedBox(width: 8),
+                            Text('痕跡を撮影'),
                           ],
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton(
-                  onPressed: _takePicture,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[900],
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.camera),
-                      SizedBox(width: 8),
-                      Text('痕跡を撮影'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _isUploading ? null : _uploadImages,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.green[900],
+                        ),
+                        child: _isUploading
+                            ? Row(
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(width: 8),
+                                  Text('アップロード中...'),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Icon(Icons.upload),
+                                  SizedBox(width: 8),
+                                  Text('アップロード'),
+                                ],
+                              ),
+                      ),
                     ],
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: _isUploading ? null : _uploadImages,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.green[900],
-                  ),
-                  child: _isUploading
-                      ? Row(
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 8),
-                            Text('アップロード中...'),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Icon(Icons.upload),
-                            SizedBox(width: 8),
-                            Text('アップロード'),
-                          ],
-                        ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                ],
+              ),
+            );
+          }
+        },
       ),
     );
   }
 
   // 痕跡の撮影枚数とサークルチャートを表示するカード
-  Widget _buildTraceCountCard() {
-    int validTraceCount = _getValidTraceCount();
+  Widget _buildTraceCountCard(List<PhotoData> traces) {
+    int validTraceCount = traces
+        .where((photo) =>
+            photo.animalType != 'start_flag' &&
+            photo.animalType != 'stop_flag' &&
+            photo.uploadedFlag == 0)
+        .length;
     double progress = (validTraceCount % _maxCount) / _maxCount;
     int fullRounds = (validTraceCount / _maxCount).floor();
 
@@ -248,66 +273,71 @@ class _Local_CameraState extends State<Local_Camera> {
     });
   }
 
-  Future<void> _saveTraceInfoAsTxt(PhotoData photoData, String filename) async {
-      // 保存する痕跡情報を準備
-      final traceInfo = '''
-        Timestamp: ${DateTime.now().toIso8601String()}
-        Animal Type: ${photoData.animalType}
-        Trace Type: ${photoData.traceType}
-        Elapsed Time for Trace: ${photoData.elapsedForTrace}
-        Confidence: ${photoData.confidence}
-        Latitude: ${photoData.position.latitude}
-        Longitude: ${photoData.position.longitude}
-        Memo: ${photoData.memo}
-      ''';
-
-      // Android 10以降でMediaStoreを使って外部ストレージのDocumentsディレクトリに保存
-      if (await Permission.storage.request().isGranted) {
-        final Directory? externalDir = await getExternalStorageDirectory();
-        if (externalDir != null) {
-          final path = '/storage/emulated/0/Documents/$filename.txt';
-          final File txtFile = File(path);
-
-          // txtファイルを書き込み
-          await txtFile.writeAsString(traceInfo);
-          print('*******ファイルが保存されました: $path*******');
-        } else {
-          print('*******外部ストレージにアクセスできませんでした*******');
-        }
-      } else {
-        print('*******ストレージアクセスが許可されていません*******');
-    }
-  }
-
-  // 編集機能
-  Future<void> _editPhotoData(int index) async {
-    // 編集ダイアログの表示
+  Future<void> _editPhotoData(int index, PhotoData originalData) async {
+    // 編集用のダイアログを表示し、新しいデータを取得
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: _pendingUploadImages[index].image);
+        return AnimalTypeMemoWizard(image: originalData.image);
       },
     );
 
-      if (result != null) {
-        setState(() {
-          _pendingUploadImages[index].animalType = result['animalType'] ?? 'error';
-          _pendingUploadImages[index].traceType = result['traceType'] ?? 'error';
-          _pendingUploadImages[index].memo = result['memo'] ?? '';
-          _pendingUploadImages[index].elapsedForTrace = result['elapsed_for_trace'] ?? '';
-          _pendingUploadImages[index].confidence = result['confidence'] ?? '';
-        });
-      }
+    if (result != null) {
+      // 新しいデータを作成
+      PhotoData newData = PhotoData(
+        image: originalData.image,
+        imageUrl: '',
+        animalType: result['animalType'] ?? 'error',
+        traceType: result['traceType'] ?? 'error',
+        memo: result['memo'] ?? '',
+        elapsedForTrace: result['elapsed_for_trace'] ?? '',
+        confidence: result['confidence'] ?? '',
+        position: originalData.position,
+        captureTime: originalData.captureTime,
+        uploadedFlag: originalData.uploadedFlag,
+      );
+
+      // txtファイルを更新
+      await _updateTraceAtIndex(index, newData);
+      setState(() {}); // UIを更新
+    }
   }
 
-  // 削除確認機能
+  Future<void> _updateTraceAtIndex(int index, PhotoData newData) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/traces.txt';
+    final file = File(filePath);
+
+    if (await file.exists()) {
+      final content = await file.readAsString();
+      List<dynamic> traces = json.decode(content);
+      // 該当するエントリを更新
+      traces[index] = {
+        'imagePath': newData.image.path,
+        'animalType': newData.animalType,
+        'traceType': newData.traceType,
+        'memo': newData.memo,
+        'elapsedForTrace': newData.elapsedForTrace,
+        'confidence': newData.confidence,
+        'position': {
+          'latitude': newData.position.latitude,
+          'longitude': newData.position.longitude,
+        },
+        'uploadedFlag': newData.uploadedFlag,
+        'captureTime': newData.captureTime.toIso8601String(),
+      };
+      // txtファイルに書き込む
+      await file.writeAsString(json.encode(traces));
+    }
+  }
+
   Future<void> _confirmDelete(int index) async {
     bool? deleteConfirmed = await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('取消の確認'),
-          content: Text('この写真を取り消しますか？'),
+          title: Text('削除の確認'),
+          content: Text('この写真を削除しますか？'),
           actions: [
             TextButton(
               onPressed: () {
@@ -327,42 +357,57 @@ class _Local_CameraState extends State<Local_Camera> {
     );
 
     if (deleteConfirmed == true) {
-      setState(() {
-        _pendingUploadImages.removeAt(index);
-      });
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/traces.txt';
+      final file = File(filePath);
+
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        List<dynamic> traces = json.decode(content);
+        // 該当するエントリを削除
+        traces.removeAt(index);
+        // txtファイルを更新
+        await file.writeAsString(json.encode(traces));
+        setState(() {});
+      }
     }
   }
 
-  // 写真撮影機能
   Future<void> _takePicture() async {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
       final DateTime captureTime = DateTime.now();
 
       // 撮影時間をファイル名としてフォーマット
-      final String formattedTime = captureTime.toIso8601String().replaceAll(':', '-');
+      final String formattedTime =
+          captureTime.toIso8601String().replaceAll(':', '-');
 
       // 画像のパスを取得
       final image = File(imageFile.path);
 
       // 撮影時間をファイル名として画像をローカルに保存
       final String newPath = '${image.parent.path}/$formattedTime.jpg';
-      final File newImage = await image.copy(newPath); // 新しいパスにファイルをコピー
+      final File newImage =
+          await image.copy(newPath); // 新しいパスにファイルをコピー
 
       // ギャラリーに画像を保存
       final bytes = await newImage.readAsBytes();
-      final result = await ImageGallerySaver.saveImage(Uint8List.fromList(bytes), name: formattedTime);
+      final result = await ImageGallerySaver.saveImage(
+          Uint8List.fromList(bytes),
+          name: formattedTime);
       print('******画像の保存結果: $result******');
       if (result['isSuccess']) {
         Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(newImage, position, captureTime, formattedTime); // 撮影時間とフォーマットされた時間を渡す
+        await _showAnimalTypeMemoDialog(
+            newImage, position, captureTime, formattedTime); // 撮影時間とフォーマットされた時間を渡す
       } else {
         print('ローカルへの保存に失敗しました');
       }
     }
   }
 
-  Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime, String formattedTime) async {
+  Future<void> _showAnimalTypeMemoDialog(File image, Position position,
+      DateTime captureTime, String formattedTime) async {
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -377,30 +422,104 @@ class _Local_CameraState extends State<Local_Camera> {
       String elapsedForTrace = result['elapsed_for_trace'] ?? '';
       String confidence = result['confidence'] ?? '';
 
-      setState(() {
-        _pendingUploadImages.add(PhotoData(
-          image: image,
-          imageUrl: '',
-          animalType: animalType,
-          traceType: traceType,
-          memo: memo,
-          position: position,
-          elapsedForTrace: elapsedForTrace,
-          confidence: confidence,
-          captureTime: captureTime, // 撮影日時を保存
-        ));
-        // 画像と同じファイル名で痕跡情報をTXTとして保存
-        _saveTraceInfoAsTxt(
-            _pendingUploadImages.last,
-            formattedTime, // 画像のファイル名に使った日時を使用
-          );
-      });
+      // 新しいPhotoDataを作成
+      PhotoData photoData = PhotoData(
+        image: image,
+        imageUrl: '',
+        animalType: animalType,
+        traceType: traceType,
+        memo: memo,
+        position: position,
+        elapsedForTrace: elapsedForTrace,
+        confidence: confidence,
+        captureTime: captureTime, // 撮影日時を保存
+        uploadedFlag: 0, // 新規データなので未投稿フラグは0
+      );
+
+      // 痕跡情報を保存
+      await _saveTraceInfo(photoData);
+      setState(() {}); // UIを更新
     }
   }
 
-  // 画像アップロード機能
+  Future<void> _saveTraceInfo(PhotoData photoData) async {
+    // ローカルのtxtファイルのパスを取得
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/traces.txt';
+    final file = File(filePath);
+
+    // 既存のデータを読み込む
+    List<dynamic> traces = [];
+    if (await file.exists()) {
+      final content = await file.readAsString();
+      if (content.isNotEmpty) {
+        traces = json.decode(content);
+      }
+    }
+
+    // 新しいデータを追加
+    Map<String, dynamic> newTrace = {
+      'imagePath': photoData.image.path,
+      'animalType': photoData.animalType,
+      'traceType': photoData.traceType,
+      'memo': photoData.memo,
+      'elapsedForTrace': photoData.elapsedForTrace,
+      'confidence': photoData.confidence,
+      'position': {
+        'latitude': photoData.position.latitude,
+        'longitude': photoData.position.longitude,
+      },
+      'uploadedFlag': 0,
+      'captureTime': photoData.captureTime.toIso8601String(),
+    };
+    traces.add(newTrace);
+
+    // txtファイルに書き込む
+    await file.writeAsString(json.encode(traces));
+  }
+
+  Future<List<PhotoData>> _loadTraces() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/traces.txt';
+    final file = File(filePath);
+
+    List<PhotoData> traces = [];
+    if (await file.exists()) {
+      final content = await file.readAsString();
+      if (content.isNotEmpty) {
+        List<dynamic> jsonData = json.decode(content);
+        for (var item in jsonData) {
+          traces.add(PhotoData(
+            image: File(item['imagePath']),
+            imageUrl: '',
+            animalType: item['animalType'],
+            traceType: item['traceType'],
+            memo: item['memo'],
+            elapsedForTrace: item['elapsedForTrace'],
+            confidence: item['confidence'],
+            position: Position(
+              latitude: item['position']['latitude'],
+              longitude: item['position']['longitude'],
+              timestamp: null,
+              accuracy: 0.0,
+              altitude: 0.0,
+              heading: 0.0,
+              speed: 0.0,
+              speedAccuracy: 0.0,
+            ),
+            captureTime: DateTime.parse(item['captureTime']),
+            uploadedFlag: item['uploadedFlag'],
+          ));
+        }
+      }
+    }
+    return traces;
+  }
+
   Future<void> _uploadImages() async {
+    // ネットワーク接続を確認
     if (!(await _isConnectedToNetwork())) {
+      // エラーダイアログを表示
       showDialog(
         context: context,
         builder: (context) {
@@ -413,7 +532,7 @@ class _Local_CameraState extends State<Local_Camera> {
       return;
     }
 
-    // ネットワーク速度が安定しているか確認するメッセージ
+    // アップロード確認のダイアログを表示
     bool confirmUpload = await showDialog(
       context: context,
       builder: (context) {
@@ -443,121 +562,117 @@ class _Local_CameraState extends State<Local_Camera> {
       return;
     }
 
-    // アップロードを開始する
     setState(() {
-      _isUploading = true; // アップロード中であることを示す
+      _isUploading = true;
     });
 
-    List<PhotoData> imagesCopy = List.from(_pendingUploadImages);
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/traces.txt';
+    final file = File(filePath);
 
-    for (var data in imagesCopy) {
-      try {
-        data.imageUrl = await _uploadImage(data.image, data.animalType, data.position, data.captureTime);
-        await _saveToFirestore(data.position, data.imageUrl, data.animalType, data.memo, data.elapsedForTrace, data.traceType, _selectedUserId, data.confidence);
-        await _updateUserTotalPoints(_selectedUserId, imagesCopy.length);
-        await _updateAnimalPoints(_selectedUserId, data.animalType);
+    if (await file.exists()) {
+      final content = await file.readAsString();
+      List<dynamic> traces = json.decode(content);
 
-        setState(() {
-          _pendingUploadImages.remove(data);
-        });
-      } catch (e) {
-        print('Error during image upload: $e');
+      for (int i = 0; i < traces.length; i++) {
+        var data = traces[i];
+        if (data['uploadedFlag'] == 0) {
+          try {
+            // 画像をアップロード
+            String imageUrl = await _uploadImage(
+              File(data['imagePath']),
+              data['animalType'],
+              Position(
+                latitude: data['position']['latitude'],
+                longitude: data['position']['longitude'],
+                timestamp: null,
+                accuracy: 0.0,
+                altitude: 0.0,
+                heading: 0.0,
+                speed: 0.0,
+                speedAccuracy: 0.0,
+              ),
+              DateTime.parse(data['captureTime']),
+            );
+
+            // Firebaseにデータを保存
+            await _saveToFirestore(
+              Position(
+                latitude: data['position']['latitude'],
+                longitude: data['position']['longitude'],
+                timestamp: null,
+                accuracy: 0.0,
+                altitude: 0.0,
+                heading: 0.0,
+                speed: 0.0,
+                speedAccuracy: 0.0,
+              ),
+              imageUrl,
+              data['animalType'],
+              data['memo'],
+              data['elapsedForTrace'],
+              data['traceType'],
+              _selectedUserId,
+              data['confidence'],
+            );
+
+            // uploadedFlagを1に更新
+            traces[i]['uploadedFlag'] = 1;
+          } catch (e) {
+            print('アップロード中にエラーが発生しました: $e');
+          }
+        }
       }
+      // txtファイルを更新
+      await file.writeAsString(json.encode(traces));
     }
 
     setState(() {
-      _isUploading = false; // アップロード完了後にフラグをリセット
+      _isUploading = false;
     });
 
-    if (_pendingUploadImages.isEmpty) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('アップロード完了'),
-            content: Text('すべての画像がアップロードされ、ローカルの画像も削除されました。'),
-          );
-        },
-      );
-    }
+    // アップロード完了のダイアログを表示
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('アップロード完了'),
+          content: Text('すべての画像がアップロードされました。'),
+        );
+      },
+    );
   }
 
-
-  // ネットワーク接続確認機能
   Future<bool> _isConnectedToNetwork() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
     return connectivityResult != ConnectivityResult.none;
   }
 
-  // Firebaseにデータを保存する機能
-  Future<void> _saveToFirestore(Position position, String imageUrl, String animalType, String memo, String elapsedForTrace, String traceType, String selectedUserId, String confidence) async {
+  Future<void> _saveToFirestore(
+      Position position,
+      String imageUrl,
+      String animalType,
+      String memo,
+      String elapsedForTrace,
+      String traceType,
+      String selectedUserId,
+      String confidence) async {
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
       'url': imageUrl,
-      'timestamp': DateTime.now(),
+      // 'timestamp': DateTime.now(), // Firebase保存時の時刻は登録不要とのこと
       'AnimalType': animalType,
       'Memo': memo,
       'ElapsedForTrace': elapsedForTrace,
       'TraceType': traceType,
       'User_ID': selectedUserId,
-      'Confidence': confidence, // 追加
+      'Confidence': confidence,
     });
   }
 
-  Future<void> _updateAnimalPoints(String userId, String animalType) async {
-    try {
-      var querySnapshot = await FirebaseFirestore.instance
-          .collection('User_Information')
-          .where('User_ID', isEqualTo: userId)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        var doc = querySnapshot.docs[0];
-        await doc.reference.update({
-          '${animalType}_Point': FieldValue.increment(1),
-        });
-      } else {
-        await FirebaseFirestore.instance.collection('User_Information').add({
-          'User_ID': userId,
-          'Boar_Point': 0,
-          'Deer_Point': 0,
-          'Other_Point': 0,
-          'total_point': 0,
-        });
-      }
-    } catch (e) {
-      print('Error updating animal-specific points: $e');
-    }
-  }
-
-  Future<void> _updateUserTotalPoints(String userId, int numberOfPhotos) async {
-    try {
-      var querySnapshot = await FirebaseFirestore.instance
-          .collection('User_Information')
-          .where('User_ID', isEqualTo: userId)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        var doc = querySnapshot.docs[0];
-        await doc.reference.update({
-          'total_point': FieldValue.increment(numberOfPhotos),
-        });
-      } else {
-        await FirebaseFirestore.instance.collection('User_Information').add({
-          'User_ID': userId,
-          'Boar_Point': 0,
-          'Deer_Point': 0,
-          'Other_Point': 0,
-          'total_point': numberOfPhotos,
-        });
-      }
-    } catch (e) {
-      print('Error updating user total points: $e');
-    }
-  }
-
-  Future<String> _uploadImage(File image, String animalType, Position position, DateTime captureTime) async {
+  Future<String> _uploadImage(
+      File image, String animalType, Position position, DateTime captureTime) async {
     final storage = FirebaseStorage.instance;
     final folderPath = 'images/$animalType';
 
@@ -574,7 +689,6 @@ class _Local_CameraState extends State<Local_Camera> {
     // 画像のダウンロードURLを取得
     return await ref.getDownloadURL();
   }
-
 
   Future<Position> _getCurrentLocation() async {
     return await Geolocator.getCurrentPosition(

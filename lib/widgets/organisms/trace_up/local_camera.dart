@@ -15,6 +15,7 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart'; // 追加
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:typed_data';
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -500,7 +501,9 @@ class _Local_CameraState extends State<Local_Camera> {
             position: Position(
               latitude: item['position']['latitude'],
               longitude: item['position']['longitude'],
-              timestamp: null,
+              altitudeAccuracy: 0.0,
+              headingAccuracy: 0.0,
+              timestamp: DateTime.parse(item['captureTime']), // 修正
               accuracy: 0.0,
               altitude: 0.0,
               heading: 0.0,
@@ -585,7 +588,9 @@ class _Local_CameraState extends State<Local_Camera> {
               Position(
                 latitude: data['position']['latitude'],
                 longitude: data['position']['longitude'],
-                timestamp: null,
+                altitudeAccuracy: 0.0,
+                headingAccuracy: 0.0,
+                timestamp: DateTime.parse(data['captureTime']), // 修正
                 accuracy: 0.0,
                 altitude: 0.0,
                 heading: 0.0,
@@ -600,7 +605,9 @@ class _Local_CameraState extends State<Local_Camera> {
               Position(
                 latitude: data['position']['latitude'],
                 longitude: data['position']['longitude'],
-                timestamp: null,
+                altitudeAccuracy: 0.0,
+                headingAccuracy: 0.0,
+                timestamp: DateTime.parse(data['captureTime']), // 修正
                 accuracy: 0.0,
                 altitude: 0.0,
                 heading: 0.0,

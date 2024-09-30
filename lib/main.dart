@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:wildlife_app/pages/login.dart';
 import 'package:wildlife_app/pages/home.dart'; // ホームページのファイルをインポート
 import 'package:wildlife_app/util/firebase_options.dart';
+import 'dart:typed_data';
 
 // ユーザーの認証情報を提供するプロバイダークラス
 class UserProvider extends ChangeNotifier {

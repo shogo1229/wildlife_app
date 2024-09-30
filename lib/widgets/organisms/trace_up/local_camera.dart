@@ -607,7 +607,7 @@ class _Local_CameraState extends State<Local_Camera> {
                 longitude: data['position']['longitude'],
                 altitudeAccuracy: 0.0,
                 headingAccuracy: 0.0,
-                timestamp: DateTime.parse(data['captureTime']), // 修正
+                timestamp: DateTime.parse(data['captureTime']), // 正しいタイムスタンプを使用
                 accuracy: 0.0,
                 altitude: 0.0,
                 heading: 0.0,
@@ -621,6 +621,7 @@ class _Local_CameraState extends State<Local_Camera> {
               data['traceType'],
               _selectedUserId,
               data['confidence'],
+              DateTime.parse(data['captureTime']) // captureTimeを渡す
             );
 
             // uploadedFlagを1に更新
@@ -663,12 +664,13 @@ class _Local_CameraState extends State<Local_Camera> {
       String elapsedForTrace,
       String traceType,
       String selectedUserId,
-      String confidence) async {
+      String confidence,
+      DateTime captureTime) async { // captureTimeを引数に追加
     await _firestore.collection('wildlife_trace').add({
       'latitude': position.latitude,
       'longitude': position.longitude,
       'url': imageUrl,
-      // 'timestamp': DateTime.now(), // Firebase保存時の時刻は登録不要とのこと
+      'timestamp': captureTime, // DateTime.now()の代わりにcaptureTimeを使用
       'AnimalType': animalType,
       'Memo': memo,
       'ElapsedForTrace': elapsedForTrace,
@@ -677,6 +679,7 @@ class _Local_CameraState extends State<Local_Camera> {
       'Confidence': confidence,
     });
   }
+
 
   Future<String> _uploadImage(
       File image, String animalType, Position position, DateTime captureTime) async {

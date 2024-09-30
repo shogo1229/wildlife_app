@@ -49,28 +49,32 @@ MapPage -->- User:MapPageを表示
 
 ```mermaid
 sequenceDiagram
-autonumber
-actor User
-User ->>+ PhotoPage: PhotoPageへ遷移
-PhotoPage -->- User:PhotoPageを表示
-User ->>+ PhotoPage: 痕跡の写真を撮影
-PhotoPage ->>+ FireBase: FireBaseへの接続リクエスト
-FireBase -->>- PhotoPage: FireBaseへ接続状況を返却
-opt FireBaseに接続可能
-PhotoPage ->>+ PhotoPage(画像キュー):リクエスト
-PhotoPage(画像キュー) ->>+ PhotoPage:レスポンス
-PhotoPage ->>+ FireBase(Image): 画像をアップロード
-FireBase(Image) -->- PhotoPage: アップロード結果レスポンス
-PhotoPage ->>+ FireBase(User): 痕跡ptを加算
-FireBase(User) -->- PhotoPage: 取得した痕跡ptを通知
-end
+    autonumber
+    actor User as ユーザー
+    User ->>+ Local_Camera: ローカルカメラを開く
+    Local_Camera ->>+ PhotoData: 痕跡データをロード
+    PhotoData -->>- Local_Camera: 痕跡データを返す
+    Local_Camera ->> Local_Camera: サークルチャートと痕跡枚数を表示
+    User ->>+ Local_Camera: 痕跡を撮影する
+    Local_Camera ->>+ ImagePicker: カメラを起動
+    ImagePicker -->>- Local_Camera: 撮影画像を取得
+    Local_Camera ->>+ ImageGallerySaver: 撮影画像をギャラリーに保存
+    ImageGallerySaver -->>- Local_Camera: 保存結果を返す
+    Local_Camera ->>+ Geolocator: 現在の位置情報を取得
+    Geolocator -->>- Local_Camera: 位置情報を返す
+    Local_Camera ->>+ AnimalTypeMemoWizard: メモと痕跡の種類を選択
+    AnimalTypeMemoWizard -->>- Local_Camera: メモと痕跡のデータを返す
+    Local_Camera ->>+ File: 痕跡情報をローカルに保存
+    File -->>- Local_Camera: 痕跡情報を保存完了
+    User ->>+ Local_Camera: 画像をアップロード
+    Local_Camera ->>+ Connectivity: ネットワーク接続を確認
+    Connectivity -->>- Local_Camera: 接続確認結果を返す
+    Local_Camera ->>+ Firebase Storage: 画像をFirebaseにアップロード
+    Firebase Storage -->>- Local_Camera: 画像のURLを取得
+    Local_Camera ->>+ Firestore: 痕跡データをFirestoreに保存
+    Firestore -->>- Local_Camera: 保存完了
+    Local_Camera -->> User: 処理完了メッセージを表示
 
-opt FireBaseに接続不可
-PhotoPage ->>+ PhotoPage(画像キュー):画像保存
-PhotoPage(画像キュー)-->>- PhotoPage :保存結果レスポンス
-end
-
-PhotoPage -->>- User: 投稿処理完了
 ```
 
 # 痕跡投稿画面の表示

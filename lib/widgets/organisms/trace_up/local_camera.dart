@@ -34,6 +34,9 @@ class _Local_CameraState extends State<Local_Camera> {
   List<TraceSession> _traceSessions = [];
   TraceSession? _currentSession;
 
+  // 各過去セッションの展開状態を管理するマップ
+  Map<String, bool> _expandedSessions = {};
+
   @override
   void initState() {
     super.initState();
@@ -55,6 +58,13 @@ class _Local_CameraState extends State<Local_Camera> {
               _traceSessions.last.endTime == null
           ? _traceSessions.last
           : null;
+
+      // 展開状態を初期化（過去セッションのみ）
+      for (var session in _traceSessions) {
+        if (session.endTime != null) {
+          _expandedSessions[session.sessionId] = false;
+        }
+      }
     });
   }
 
@@ -128,6 +138,12 @@ class _Local_CameraState extends State<Local_Camera> {
 
   @override
   Widget build(BuildContext context) {
+    // アクティブなセッションと過去のセッションに分類
+    List<TraceSession> activeSessions =
+        _traceSessions.where((s) => s.endTime == null).toList();
+    List<TraceSession> pastSessions =
+        _traceSessions.where((s) => s.endTime != null).toList();
+
     return Scaffold(
       // AppBarを削除してホーム画面に戻す（必要に応じて再追加）
       body: Container(
@@ -140,140 +156,366 @@ class _Local_CameraState extends State<Local_Camera> {
         child: Column(
           children: [
             Expanded(
-              child: _traceSessions.isEmpty
+              child: (_traceSessions.isEmpty)
                   ? Center(
                       child: Text(
-                        '痕跡が撮影されていません',
+                        '痕跡セッションが存在しません',
                         style: TextStyle(
                           fontSize: 20.0,
                           color: Colors.black,
                         ),
                       ),
                     )
-                  : ListView.separated(
+                  : ListView(
                       padding: EdgeInsets.all(8.0),
-                      itemCount: _traceSessions.length,
-                      separatorBuilder: (context, index) => Divider(thickness: 2),
-                      itemBuilder: (context, sessionIndex) {
-                        TraceSession session = _traceSessions[sessionIndex];
+                      children: [
+                        // アクティブなセッションの表示
+                        if (activeSessions.isNotEmpty) ...[
+                          Text(
+                            '現在アクティブなセッション',
+                            style: TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueAccent,
+                            ),
+                          ),
+                          SizedBox(height: 8.0),
+                          ...activeSessions.map((session) {
+                            int validTraceCount = session.photos
+                                .where((photo) =>
+                                    photo.animalType != 'start_flag' &&
+                                    photo.animalType != 'stop_flag' &&
+                                    photo.uploadedFlag == 0)
+                                .length;
+                            double progress =
+                                (validTraceCount % _maxCount) / _maxCount;
+                            int fullRounds =
+                                (validTraceCount / _maxCount).floor();
 
-                        // 投稿済みのセッションは表示しない
-                        bool isUploaded = session.photos.every(
-                            (photo) => photo.uploadedFlag == 1);
-                        if (isUploaded) {
-                          return SizedBox.shrink();
-                        }
-
-                        // セッション内に投稿されていない写真が存在する場合のみ表示
-                        bool hasUnuploadedPhotos = session.photos.any(
-                            (photo) => photo.uploadedFlag == 0);
-
-                        if (!hasUnuploadedPhotos) {
-                          return SizedBox.shrink();
-                        }
-
-                        // トレースセッションが開始されていて、まだ終了していない場合のみタイマーを表示
-                        bool isTracing = session.endTime == null;
-
-                        int validTraceCount = session.photos
-                            .where((photo) =>
-                                photo.animalType != 'start_flag' &&
-                                photo.animalType != 'stop_flag' &&
-                                photo.uploadedFlag == 0)
-                            .length;
-                        double progress =
-                            (validTraceCount % _maxCount) / _maxCount;
-                        int fullRounds =
-                            (validTraceCount / _maxCount).floor();
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // セッションごとのゲージカードを常に表示
-                            _buildTraceCountCard(
-                                session, validTraceCount, progress, fullRounds),
-
-                            // セッションが進行中の場合のみ経過時間を表示
-                            if (isTracing)
-                              ElapsedTimeWidget(startTime: session.startTime),
-
-                            // セッションごとの写真リスト
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: session.photos.length,
-                              itemBuilder: (context, photoIndex) {
-                                PhotoData data = session.photos[photoIndex];
-                                return Card(
-                                  key: ValueKey(data.image.path),
-                                  margin: const EdgeInsets.symmetric(
-                                      vertical: 8.0, horizontal: 16.0),
-                                  child: Row(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8.0),
-                                        child: Image.file(
-                                          data.image,
-                                          width: 120.0,
-                                          height: 120.0,
-                                          fit: BoxFit.cover,
-                                          cacheWidth: 300, // 表示用にリサイズ
-                                          cacheHeight: 300,
-                                        ),
-                                      ),
-                                      SizedBox(width: 16.0),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                            return Card(
+                              color: Colors.white70,
+                              elevation: 4.0,
+                              margin: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        // 痕跡撮影枚数の表示
+                                        Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              '獣種: ${getAnimalType(data.animalType)}',
+                                              '痕跡撮影枚数',
                                               style: TextStyle(
-                                                fontWeight: FontWeight.normal,
-                                                color: (data.animalType == 'start_flag' ||
-                                                        data.animalType == 'stop_flag')
-                                                    ? Colors.blue
-                                                    : Colors.black,
+                                                  fontSize: 16,
+                                                  fontFamily: "Noto Sans JP"),
+                                            ),
+                                            Text(
+                                              '$validTraceCount / $_maxCount',
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: Colors.green[900]),
+                                            ),
+                                          ],
+                                        ),
+                                        // サークルチャート
+                                        SizedBox(
+                                          width: 105.0,
+                                          height: 105.0,
+                                          child: PieChart(
+                                            PieChartData(
+                                              sections: _getSections(progress),
+                                              centerSpaceRadius: 20.0,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // 経過時間の表示
+                                  ElapsedTimeWidget(startTime: session.startTime),
+                                  // 撮影した写真の表示
+                                  ListView.builder(
+                                    shrinkWrap: true,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount: session.photos.length,
+                                    itemBuilder: (context, photoIndex) {
+                                      PhotoData data = session.photos[photoIndex];
+                                      return Card(
+                                        key: ValueKey(data.image.path),
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8.0, horizontal: 16.0),
+                                        child: Row(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8.0),
+                                              child: Image.file(
+                                                data.image,
+                                                width: 120.0,
+                                                height: 120.0,
+                                                fit: BoxFit.cover,
+                                                cacheWidth: 300, // 表示用にリサイズ
+                                                cacheHeight: 300,
                                               ),
                                             ),
-                                            SizedBox(height: 4.0),
-                                            Text(
-                                                '痕跡種: ${getTraceType(data.traceType)}'),
-                                            SizedBox(height: 4.0),
-                                            Text(
-                                                '${data.uploadedFlag == 1 ? "投稿済み" : "未投稿"}'),
+                                            SizedBox(width: 16.0),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    '獣種: ${getAnimalType(data.animalType)}',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.normal,
+                                                      color: (data.animalType ==
+                                                                  'start_flag' ||
+                                                              data.animalType ==
+                                                                  'stop_flag')
+                                                          ? Colors.blue
+                                                          : Colors.black,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4.0),
+                                                  Text(
+                                                      '痕跡種: ${getTraceType(data.traceType)}'),
+                                                  SizedBox(height: 4.0),
+                                                  Text(
+                                                      '${data.uploadedFlag == 1 ? "投稿済み" : "未投稿"}'),
+                                                ],
+                                              ),
+                                            ),
+                                            Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                IconButton(
+                                                  icon: Icon(Icons.edit,
+                                                      color: Colors.green[800]),
+                                                  onPressed: () => _editPhotoData(
+                                                      _traceSessions
+                                                          .indexOf(session),
+                                                      photoIndex,
+                                                      data),
+                                                ),
+                                                IconButton(
+                                                  icon: Icon(Icons.delete,
+                                                      color: Colors.red),
+                                                  onPressed: () => _confirmDelete(
+                                                      _traceSessions
+                                                          .indexOf(session),
+                                                      photoIndex),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                        SizedBox(height: 16.0),
+                        // 過去のセッションの表示
+                        if (pastSessions.isNotEmpty) ...[
+                          Text(
+                            '過去のセッション',
+                            style: TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orangeAccent,
+                            ),
+                          ),
+                          SizedBox(height: 8.0),
+                          ...pastSessions.map((session) {
+                            int validTraceCount = session.photos
+                                .where((photo) =>
+                                    photo.animalType != 'start_flag' &&
+                                    photo.animalType != 'stop_flag' &&
+                                    photo.uploadedFlag == 0)
+                                .length;
+                            double progress =
+                                (validTraceCount % _maxCount) / _maxCount;
+                            int fullRounds =
+                                (validTraceCount / _maxCount).floor();
+
+                            bool isExpanded =
+                                _expandedSessions[session.sessionId] ?? false;
+
+                            return Column(
+                              children: [
+                                Card(
+                                  color: Colors.white70,
+                                  elevation: 4.0,
+                                  margin:
+                                      EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Column(
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            // 痕跡撮影枚数の表示
+                                            Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  '痕跡撮影枚数',
+                                                  style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontFamily: "Noto Sans JP"),
+                                                ),
+                                                Text(
+                                                  '$validTraceCount / $_maxCount',
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      color: Colors.green[900]),
+                                                ),
+                                              ],
+                                            ),
+                                            // サークルチャート
+                                            SizedBox(
+                                              width: 105.0,
+                                              height: 105.0,
+                                              child: PieChart(
+                                                PieChartData(
+                                                  sections: _getSections(progress),
+                                                  centerSpaceRadius: 20.0,
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(Icons.edit,
-                                                color: Colors.green[800]),
-                                            onPressed: () => _editPhotoData(
-                                                sessionIndex,
-                                                photoIndex,
-                                                data),
-                                          ),
-                                          IconButton(
-                                            icon:
-                                                Icon(Icons.delete, color: Colors.red),
-                                            onPressed: () => _confirmDelete(
-                                                sessionIndex, photoIndex),
-                                          ),
-                                        ],
+                                      // 展開・折りたたみアイコン（過去セッションのみ）
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: IconButton(
+                                          icon: Icon(isExpanded
+                                              ? Icons.expand_less
+                                              : Icons.expand_more),
+                                          onPressed: () {
+                                            setState(() {
+                                              _expandedSessions[
+                                                      session.sessionId] =
+                                                  !isExpanded;
+                                            });
+                                          },
+                                        ),
                                       ),
                                     ],
                                   ),
-                                );
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                                ),
+                                // 詳細情報の表示（過去セッションのみ）
+                                if (isExpanded)
+                                  Column(
+                                    children: [
+                                      ListView.builder(
+                                        shrinkWrap: true,
+                                        physics:
+                                            NeverScrollableScrollPhysics(),
+                                        itemCount: session.photos.length,
+                                        itemBuilder: (context, photoIndex) {
+                                          PhotoData data =
+                                              session.photos[photoIndex];
+                                          return Card(
+                                            key: ValueKey(data.image.path),
+                                            margin: const EdgeInsets.symmetric(
+                                                vertical: 8.0,
+                                                horizontal: 16.0),
+                                            child: Row(
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          8.0),
+                                                  child: Image.file(
+                                                    data.image,
+                                                    width: 120.0,
+                                                    height: 120.0,
+                                                    fit: BoxFit.cover,
+                                                    cacheWidth:
+                                                        300, // 表示用にリサイズ
+                                                    cacheHeight: 300,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 16.0),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        '獣種: ${getAnimalType(data.animalType)}',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.normal,
+                                                          color: (data.animalType ==
+                                                                      'start_flag' ||
+                                                                  data.animalType ==
+                                                                      'stop_flag')
+                                                              ? Colors.blue
+                                                              : Colors.black,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4.0),
+                                                      Text(
+                                                          '痕跡種: ${getTraceType(data.traceType)}'),
+                                                      SizedBox(height: 4.0),
+                                                      Text(
+                                                          '${data.uploadedFlag == 1 ? "投稿済み" : "未投稿"}'),
+                                                    ],
+                                                  ),
+                                                ),
+                                                Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    IconButton(
+                                                      icon: Icon(Icons.edit,
+                                                          color: Colors.green[800]),
+                                                      onPressed: () => _editPhotoData(
+                                                          _traceSessions
+                                                              .indexOf(session),
+                                                          photoIndex,
+                                                          data),
+                                                    ),
+                                                    IconButton(
+                                                      icon: Icon(Icons.delete,
+                                                          color: Colors.red),
+                                                      onPressed: () => _confirmDelete(
+                                                          _traceSessions
+                                                              .indexOf(session),
+                                                          photoIndex),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            );
+                          }).toList(),
+                        ],
+                      ],
+                  ),
             ),
             // アクションボタン群（アップロードと撮影）
             Padding(
@@ -286,8 +528,11 @@ class _Local_CameraState extends State<Local_Camera> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.green[900],
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
                     ),
                     child: _isUploading
                         ? Row(
@@ -317,8 +562,11 @@ class _Local_CameraState extends State<Local_Camera> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       foregroundColor: Colors.white,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -329,48 +577,6 @@ class _Local_CameraState extends State<Local_Camera> {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // セッションごとのゲージカードを作成
-  Widget _buildTraceCountCard(
-      TraceSession session, int validTraceCount, double progress, int fullRounds) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Card(
-        color: Colors.white70,
-        elevation: 4.0,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // 痕跡撮影枚数の表示
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '痕跡撮影枚数',
-                  style: TextStyle(fontSize: 16, fontFamily: "Noto Sans JP"),
-                ),
-                Text(
-                  '$validTraceCount / $_maxCount',
-                  style: TextStyle(fontSize: 20, color: Colors.green[900]),
-                ),
-              ],
-            ),
-            // サークルチャート
-            SizedBox(
-              width: 105.0,
-              height: 105.0,
-              child: PieChart(
-                PieChartData(
-                  sections: _getSections(progress),
-                  centerSpaceRadius: 20.0,
-                ),
               ),
             ),
           ],
@@ -555,6 +761,7 @@ class _Local_CameraState extends State<Local_Camera> {
     setState(() {
       _traceSessions.add(newSession);
       _currentSession = newSession;
+      // アクティブセッションは常に展開状態をtrueに設定しない
     });
 
     // セッションを保存

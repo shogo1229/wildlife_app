@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:convert'; // JSON操作のために追加
+import 'dart:async'; // タイマー機能のために追加
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -35,11 +36,20 @@ class _Local_CameraState extends State<Local_Camera> {
   List<TraceSession> _traceSessions = [];
   TraceSession? _currentSession;
 
+  Timer? _timer; // タイマー
+  Duration _elapsed = Duration.zero; // 経過時間
+
   @override
   void initState() {
     super.initState();
     _selectedUserId = context.read<UserProvider>().getUserId(); // Get userId as String
     _loadSessions();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // ウィジェット破棄時にタイマーをキャンセル
+    super.dispose();
   }
 
   // セッションの読み込み
@@ -51,6 +61,9 @@ class _Local_CameraState extends State<Local_Camera> {
               _traceSessions.last.endTime == null
           ? _traceSessions.last
           : null;
+      if (_currentSession != null) {
+        _startTimer(_currentSession!.startTime);
+      }
     });
   }
 
@@ -139,10 +152,10 @@ class _Local_CameraState extends State<Local_Camera> {
               child: _traceSessions.isEmpty
                   ? Center(
                       child: Text(
-                        'トレースセッションがありません。撮影ボタンを押してください。',
+                        '痕跡が撮影されていません',
                         style: TextStyle(
-                          fontSize: 18.0,
-                          color: Colors.white,
+                          fontSize: 20.0,
+                          color: Colors.black,
                         ),
                       ),
                     )
@@ -166,9 +179,8 @@ class _Local_CameraState extends State<Local_Camera> {
                           return SizedBox.shrink();
                         }
 
-                        // トレースセッションが開始されている場合のみメータを表示
-                        bool isTracing = session.photos.any(
-                            (photo) => photo.animalType == 'start_flag');
+                        // トレースセッションが開始されていて、まだ終了していない場合のみタイマーを表示
+                        bool isTracing = session.endTime == null;
 
                         int validTraceCount = session.photos
                             .where((photo) =>
@@ -184,10 +196,14 @@ class _Local_CameraState extends State<Local_Camera> {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // セッションごとのゲージカードを常に表示
+                            _buildTraceCountCard(
+                                session, validTraceCount, progress, fullRounds),
+
+                            // セッションが進行中の場合のみ経過時間を表示
                             if (isTracing)
-                              // セッションごとのゲージカード
-                              _buildTraceCountCard(
-                                  session, validTraceCount, progress, fullRounds),
+                              _buildElapsedTimeCard(),
+
                             // セッションごとの写真リスト
                             ListView.builder(
                               shrinkWrap: true,
@@ -218,7 +234,7 @@ class _Local_CameraState extends State<Local_Camera> {
                                               style: TextStyle(
                                                 fontWeight: (data.animalType == 'start_flag' ||
                                                         data.animalType == 'stop_flag')
-                                                    ? FontWeight.bold
+                                                    ? FontWeight.normal
                                                     : FontWeight.normal,
                                                 color: (data.animalType == 'start_flag' ||
                                                         data.animalType == 'stop_flag')
@@ -327,6 +343,36 @@ class _Local_CameraState extends State<Local_Camera> {
     );
   }
 
+  // 経過時間を表示するカードを作成
+  Widget _buildElapsedTimeCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Card(
+        color: Colors.white70,
+        elevation: 4.0,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            '経過時間: ${_formatDuration(_elapsed)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: "Noto Sans JP",
+              color: Colors.black,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 経過時間をフォーマットするメソッド
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String minutes = twoDigits(duration.inMinutes.remainder(60));
+    String seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes分$seconds秒';
+  }
+
   // セッションごとのゲージカードを作成
   Widget _buildTraceCountCard(
       TraceSession session, int validTraceCount, double progress, int fullRounds) {
@@ -379,7 +425,6 @@ class _Local_CameraState extends State<Local_Camera> {
             ? Colors.green[400] // 塗られている部分の色
             : Colors.green[100], // 未塗られている部分の色
         radius: 30,
-        value: 1,
       );
     });
   }
@@ -523,7 +568,11 @@ class _Local_CameraState extends State<Local_Camera> {
     setState(() {
       _traceSessions.add(newSession);
       _currentSession = newSession;
+      _elapsed = Duration.zero; // 経過時間をリセット
     });
+
+    // タイマーを開始
+    _startTimer(startTime);
 
     // セッションを保存
     _saveTraceSessions(_traceSessions);
@@ -559,7 +608,11 @@ class _Local_CameraState extends State<Local_Camera> {
     setState(() {
       _currentSession!.endTime = DateTime.now();
       _currentSession = null;
+      _elapsed = Duration.zero; // 経過時間をリセット
     });
+
+    // タイマーを停止
+    _stopTimer();
 
     // セッションを保存
     _saveTraceSessions(_traceSessions);
@@ -845,5 +898,25 @@ class _Local_CameraState extends State<Local_Camera> {
     return await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
+  }
+
+  // タイマーを開始
+  void _startTimer(DateTime startTime) {
+    _timer?.cancel(); // 既存のタイマーがあればキャンセル
+    _elapsed = Duration.zero;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _elapsed = DateTime.now().difference(startTime);
+      });
+    });
+  }
+
+  // タイマーを停止
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+    setState(() {
+      _elapsed = Duration.zero;
+    });
   }
 }

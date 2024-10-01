@@ -1,5 +1,6 @@
+// lib/widgets/organisms/trace_up/animal_type_memo_wizard.dart
+
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 class AnimalTypeMemoWizard extends StatefulWidget {
@@ -319,41 +320,6 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
     );
   }
 
-  Widget _buildMemoInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(height: 10.0),
-        _buildElapsedForTraceSelection(),
-        SizedBox(height: 20.0),
-        _buildConfidenceSelection(),
-        SizedBox(height: 20.0),
-        Text(
-          '何か補足があれば入力してください(任意)',
-          style: TextStyle(
-            fontSize: 20.0,
-            color: Colors.green[800],
-          ),
-        ),
-        SizedBox(height: 20.0),
-        Expanded(
-          child: TextField(
-            controller: _memoController,
-            decoration: InputDecoration(
-              labelText: '備考',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              contentPadding: EdgeInsets.all(16.0),
-            ),
-            maxLines: null,
-            style: TextStyle(fontSize: 18.0),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTraceTypeButton(String label, String type, IconData icon) {
     return GestureDetector(
       onTap: () => setState(() {
@@ -392,6 +358,41 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMemoInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: 10.0),
+        _buildElapsedForTraceSelection(),
+        SizedBox(height: 20.0),
+        _buildConfidenceSelection(),
+        SizedBox(height: 20.0),
+        Text(
+          '何か補足があれば入力してください(任意)',
+          style: TextStyle(
+            fontSize: 20.0,
+            color: Colors.green[800],
+          ),
+        ),
+        SizedBox(height: 20.0),
+        Expanded(
+          child: TextField(
+            controller: _memoController,
+            decoration: InputDecoration(
+              labelText: '備考',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              contentPadding: EdgeInsets.all(16.0),
+            ),
+            maxLines: null,
+            style: TextStyle(fontSize: 18.0),
+          ),
+        ),
+      ],
     );
   }
 

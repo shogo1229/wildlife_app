@@ -448,6 +448,7 @@ class _Local_CameraState extends State<Local_Camera> {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = '${directory.path}/traces.txt';
     final file = File(filePath);
+    print("--------------Lord Local filePath: $filePath--------------");
 
     // 既存のデータを読み込む
     List<dynamic> traces = [];
@@ -483,7 +484,7 @@ class _Local_CameraState extends State<Local_Camera> {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = '${directory.path}/traces.txt';
     final file = File(filePath);
-
+    print("--------------Loard Local filePath: $filePath--------------");
     List<PhotoData> traces = [];
     if (await file.exists()) {
       final content = await file.readAsString();
@@ -572,6 +573,7 @@ class _Local_CameraState extends State<Local_Camera> {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = '${directory.path}/traces.txt';
     final file = File(filePath);
+    print("--------------filePath: $filePath--------------");
 
     if (await file.exists()) {
       final content = await file.readAsString();

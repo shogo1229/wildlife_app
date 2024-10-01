@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/trace_session.dart'; // 追加
+import 'package:wildlife_app/widgets/organisms/trace_up/posture_estimator.dart'; // 追加
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -39,6 +40,8 @@ class _Local_CameraState extends State<Local_Camera> {
   Timer? _timer; // タイマー
   Duration _elapsed = Duration.zero; // 経過時間
 
+  final PostureEstimator _postureEstimator = PostureEstimator(); // 追加
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,7 @@ class _Local_CameraState extends State<Local_Camera> {
   @override
   void dispose() {
     _timer?.cancel(); // ウィジェット破棄時にタイマーをキャンセル
+    _postureEstimator.stopEstimation(); // 追加: 姿勢推定を停止
     super.dispose();
   }
 
@@ -547,7 +551,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // トレース開始
-  void _startTracing() {
+  void _startTracing() async {
     if (_currentSession != null) {
       // 既にトレースセッションが開始されている場合
       ScaffoldMessenger.of(context).showSnackBar(
@@ -575,7 +579,10 @@ class _Local_CameraState extends State<Local_Camera> {
     _startTimer(startTime);
 
     // セッションを保存
-    _saveTraceSessions(_traceSessions);
+    await _saveTraceSessions(_traceSessions);
+
+    // 姿勢推定を開始 // 追加
+    await _postureEstimator.startEstimation(sessionId);
 
     // トレース開始の確認ダイアログ
     showDialog(
@@ -596,7 +603,7 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // トレース終了
-  void _stopTracing() {
+  void _stopTracing() async {
     if (_currentSession == null) {
       // トレースセッションが開始されていない場合
       ScaffoldMessenger.of(context).showSnackBar(
@@ -615,7 +622,10 @@ class _Local_CameraState extends State<Local_Camera> {
     _stopTimer();
 
     // セッションを保存
-    _saveTraceSessions(_traceSessions);
+    await _saveTraceSessions(_traceSessions);
+
+    // 姿勢推定を停止 // 追加
+    await _postureEstimator.stopEstimation();
 
     // トレース終了の確認ダイアログ
     showDialog(
@@ -666,7 +676,7 @@ class _Local_CameraState extends State<Local_Camera> {
       });
 
       // セッションを保存
-      _saveTraceSessions(_traceSessions);
+      await _saveTraceSessions(_traceSessions);
     }
   }
 

@@ -214,7 +214,18 @@ class _Local_CameraState extends State<Local_Camera> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                                '獣種: ${getAnimalType(data.animalType)}'),
+                                              '獣種: ${getAnimalType(data.animalType)}',
+                                              style: TextStyle(
+                                                fontWeight: (data.animalType == 'start_flag' ||
+                                                        data.animalType == 'stop_flag')
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                color: (data.animalType == 'start_flag' ||
+                                                        data.animalType == 'stop_flag')
+                                                    ? Colors.blue
+                                                    : Colors.black,
+                                              ),
+                                            ),
                                             SizedBox(height: 4.0),
                                             Text(
                                                 '痕跡種: ${getTraceType(data.traceType)}'),
@@ -423,13 +434,6 @@ class _Local_CameraState extends State<Local_Camera> {
       String elapsedForTrace = result['elapsed_for_trace'] ?? '';
       String confidence = result['confidence'] ?? '';
 
-      // トレースセッションの開始・終了を判断
-      if (animalType == 'start_flag') {
-        _startTracing();
-      } else if (animalType == 'stop_flag') {
-        _stopTracing();
-      }
-
       // 新しいPhotoDataを作成
       PhotoData photoData = PhotoData(
         image: image,
@@ -444,14 +448,55 @@ class _Local_CameraState extends State<Local_Camera> {
         uploadedFlag: 0,
       );
 
-      // トレースセッションが存在する場合のみ写真を追加
-      if (_currentSession != null) {
-        setState(() {
-          _currentSession!.photos.add(photoData);
-        });
+      if (animalType == 'start_flag') {
+        // セッションを開始
+        _startTracing();
 
-        // セッションを保存
-        await _saveTraceSessions(_traceSessions);
+        if (_currentSession != null) {
+          setState(() {
+            _currentSession!.photos.add(photoData);
+          });
+
+          // セッションを保存
+          await _saveTraceSessions(_traceSessions);
+        } else {
+          // セッションが開始できなかった場合
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('セッションを開始できませんでした。')),
+          );
+        }
+      } else if (animalType == 'stop_flag') {
+        if (_currentSession != null) {
+          setState(() {
+            _currentSession!.photos.add(photoData);
+          });
+
+          // セッションを保存
+          await _saveTraceSessions(_traceSessions);
+
+          // セッションを終了
+          _stopTracing();
+        } else {
+          // セッションが存在しない場合
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('トレースセッションが開始されていません。')),
+          );
+        }
+      } else {
+        // その他のanimalTypeの場合
+        if (_currentSession != null) {
+          setState(() {
+            _currentSession!.photos.add(photoData);
+          });
+
+          // セッションを保存
+          await _saveTraceSessions(_traceSessions);
+        } else {
+          // セッションが存在しない場合
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('トレースセッションが開始されていません。')),
+          );
+        }
       }
     }
   }
@@ -670,9 +715,7 @@ class _Local_CameraState extends State<Local_Camera> {
       TraceSession session = _traceSessions[sessionIndex];
       for (int photoIndex = 0; photoIndex < session.photos.length; photoIndex++) {
         PhotoData data = session.photos[photoIndex];
-        if (data.uploadedFlag == 0 &&
-            data.animalType != 'start_flag' &&
-            data.animalType != 'stop_flag') {
+        if (data.uploadedFlag == 0) { // `animalType` の条件を削除
           try {
             // 画像をアップロード
             String imageUrl = await _uploadImage(
@@ -701,6 +744,10 @@ class _Local_CameraState extends State<Local_Camera> {
             });
           } catch (e) {
             print('アップロード中にエラーが発生しました: $e');
+            // エラー通知をユーザーに表示（オプション）
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('画像のアップロード中にエラーが発生しました。')),
+            );
           }
         }
       }

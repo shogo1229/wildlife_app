@@ -98,7 +98,10 @@ class _Local_CameraState extends State<Local_Camera> {
             return Center(child: Text('エラーが発生しました'));
           } else {
             // データが存在する場合
-            List<PhotoData> traces = snapshot.data!;
+            List<PhotoData> traces = snapshot.data!
+                .where((trace) => trace.uploadedFlag == 0) // 投稿済みのデータを除外
+                .toList();
+            
             return Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -211,6 +214,7 @@ class _Local_CameraState extends State<Local_Camera> {
       ),
     );
   }
+
 
   // 痕跡の撮影枚数とサークルチャートを表示するカード
   Widget _buildTraceCountCard(List<PhotoData> traces) {

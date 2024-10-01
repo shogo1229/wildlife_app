@@ -1,8 +1,7 @@
-// lib/widgets/organisms/trace_up/local_camera.dart
-
 import 'dart:io';
 import 'dart:convert'; // JSON操作のために追加
 import 'dart:async'; // タイマー機能のために追加
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,7 +10,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
-import 'package:wildlife_app/widgets/organisms/trace_up/trace_session.dart'; // 追加
+import 'package:wildlife_app/widgets/organisms/trace_up/trace_session.dart';
 import 'package:wildlife_app/widgets/organisms/home/user_selection.dart';
 import 'package:wildlife_app/widgets/organisms/trace_up/animal_type_memo_wizard.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -19,7 +18,6 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart'; // 追加
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:typed_data';
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -36,9 +34,6 @@ class _Local_CameraState extends State<Local_Camera> {
   List<TraceSession> _traceSessions = [];
   TraceSession? _currentSession;
 
-  Timer? _timer; // タイマー
-  Duration _elapsed = Duration.zero; // 経過時間
-
   @override
   void initState() {
     super.initState();
@@ -48,7 +43,6 @@ class _Local_CameraState extends State<Local_Camera> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // ウィジェット破棄時にタイマーをキャンセル
     super.dispose();
   }
 
@@ -61,9 +55,6 @@ class _Local_CameraState extends State<Local_Camera> {
               _traceSessions.last.endTime == null
           ? _traceSessions.last
           : null;
-      if (_currentSession != null) {
-        _startTimer(_currentSession!.startTime);
-      }
     });
   }
 
@@ -159,8 +150,10 @@ class _Local_CameraState extends State<Local_Camera> {
                         ),
                       ),
                     )
-                  : ListView.builder(
+                  : ListView.separated(
+                      padding: EdgeInsets.all(8.0),
                       itemCount: _traceSessions.length,
+                      separatorBuilder: (context, index) => Divider(thickness: 2),
                       itemBuilder: (context, sessionIndex) {
                         TraceSession session = _traceSessions[sessionIndex];
 
@@ -202,7 +195,7 @@ class _Local_CameraState extends State<Local_Camera> {
 
                             // セッションが進行中の場合のみ経過時間を表示
                             if (isTracing)
-                              _buildElapsedTimeCard(),
+                              ElapsedTimeWidget(startTime: session.startTime),
 
                             // セッションごとの写真リスト
                             ListView.builder(
@@ -217,11 +210,16 @@ class _Local_CameraState extends State<Local_Camera> {
                                       vertical: 8.0, horizontal: 16.0),
                                   child: Row(
                                     children: [
-                                      Image.file(
-                                        data.image,
-                                        width: 120.0,
-                                        height: 120.0,
-                                        fit: BoxFit.cover,
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8.0),
+                                        child: Image.file(
+                                          data.image,
+                                          width: 120.0,
+                                          height: 120.0,
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 300, // 表示用にリサイズ
+                                          cacheHeight: 300,
+                                        ),
                                       ),
                                       SizedBox(width: 16.0),
                                       Expanded(
@@ -232,10 +230,7 @@ class _Local_CameraState extends State<Local_Camera> {
                                             Text(
                                               '獣種: ${getAnimalType(data.animalType)}',
                                               style: TextStyle(
-                                                fontWeight: (data.animalType == 'start_flag' ||
-                                                        data.animalType == 'stop_flag')
-                                                    ? FontWeight.normal
-                                                    : FontWeight.normal,
+                                                fontWeight: FontWeight.normal,
                                                 color: (data.animalType == 'start_flag' ||
                                                         data.animalType == 'stop_flag')
                                                     ? Colors.blue
@@ -275,7 +270,6 @@ class _Local_CameraState extends State<Local_Camera> {
                                 );
                               },
                             ),
-                            Divider(thickness: 2),
                           ],
                         );
                       },
@@ -343,36 +337,6 @@ class _Local_CameraState extends State<Local_Camera> {
     );
   }
 
-  // 経過時間を表示するカードを作成
-  Widget _buildElapsedTimeCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Card(
-        color: Colors.white70,
-        elevation: 4.0,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            '経過時間: ${_formatDuration(_elapsed)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontFamily: "Noto Sans JP",
-              color: Colors.black,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 経過時間をフォーマットするメソッド
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String minutes = twoDigits(duration.inMinutes.remainder(60));
-    String seconds = twoDigits(duration.inSeconds.remainder(60));
-    return '$minutes分$seconds秒';
-  }
-
   // セッションごとのゲージカードを作成
   Widget _buildTraceCountCard(
       TraceSession session, int validTraceCount, double progress, int fullRounds) {
@@ -419,13 +383,25 @@ class _Local_CameraState extends State<Local_Camera> {
   List<PieChartSectionData> _getSections(double progress) {
     int filledSections = (progress * _maxCount).round();
     return List.generate(10, (index) {
-      bool isFilled = index < filledSections;
-      return PieChartSectionData(
-        color: isFilled
-            ? Colors.green[400] // 塗られている部分の色
-            : Colors.green[100], // 未塗られている部分の色
-        radius: 30,
-      );
+      if (index < filledSections && filledSections <= 10) {
+        // 10個以下の撮影の場合
+        return PieChartSectionData(
+          color: Colors.green[400], // 濃い緑色
+          radius: 30,
+        );
+      } else if (index < 10) {
+        // 10個未満の撮影で未塗りの部分
+        return PieChartSectionData(
+          color: Colors.green[100], // 薄い緑色
+          radius: 30,
+        );
+      } else {
+        // 11個以上の撮影の場合、超過部分を赤く表示
+        return PieChartSectionData(
+          color: Colors.red, // 赤色
+          radius: 30,
+        );
+      }
     });
   }
 
@@ -444,20 +420,31 @@ class _Local_CameraState extends State<Local_Camera> {
 
       // 撮影時間をファイル名として画像をローカルに保存
       final String newPath = '${image.parent.path}/$formattedTime.jpg';
-      final File newImage = await image.copy(newPath); // 新しいパスにファイルをコピー
 
-      // ギャラリーに画像を保存
-      final bytes = await newImage.readAsBytes();
-      final result = await ImageGallerySaver.saveImage(
-          Uint8List.fromList(bytes),
-          name: formattedTime);
-      print('******画像の保存結果: $result******');
-      if (result['isSuccess']) {
-        Position position = await _getCurrentLocation();
-        await _showAnimalTypeMemoDialog(
-            newImage, position, captureTime, formattedTime); // 撮影時間とフォーマットされた時間を渡す
-      } else {
-        print('ローカルへの保存に失敗しました');
+      try {
+        // ファイルをコピー（オリジナルを保持）
+        final File newImage = await image.copy(newPath);
+
+        // 画像をギャラリーに保存（オリジナルの解像度を保持）
+        final bytes = await newImage.readAsBytes();
+        final result = await ImageGallerySaver.saveImage(
+            Uint8List.fromList(bytes), name: formattedTime);
+        print('******画像の保存結果: $result******');
+        if (result['isSuccess']) {
+          Position position = await _getCurrentLocation();
+          await _showAnimalTypeMemoDialog(
+              newImage, position, captureTime, formattedTime); // 撮影時間とフォーマットされた時間を渡す
+        } else {
+          print('ローカルへの保存に失敗しました');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ローカルへの保存に失敗しました')),
+          );
+        }
+      } catch (e) {
+        print('画像処理中にエラーが発生しました: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('画像処理中にエラーが発生しました')),
+        );
       }
     }
   }
@@ -568,11 +555,7 @@ class _Local_CameraState extends State<Local_Camera> {
     setState(() {
       _traceSessions.add(newSession);
       _currentSession = newSession;
-      _elapsed = Duration.zero; // 経過時間をリセット
     });
-
-    // タイマーを開始
-    _startTimer(startTime);
 
     // セッションを保存
     _saveTraceSessions(_traceSessions);
@@ -608,11 +591,7 @@ class _Local_CameraState extends State<Local_Camera> {
     setState(() {
       _currentSession!.endTime = DateTime.now();
       _currentSession = null;
-      _elapsed = Duration.zero; // 経過時間をリセット
     });
-
-    // タイマーを停止
-    _stopTimer();
 
     // セッションを保存
     _saveTraceSessions(_traceSessions);
@@ -666,7 +645,7 @@ class _Local_CameraState extends State<Local_Camera> {
       });
 
       // セッションを保存
-      _saveTraceSessions(_traceSessions);
+      await _saveTraceSessions(_traceSessions);
     }
   }
 
@@ -763,48 +742,20 @@ class _Local_CameraState extends State<Local_Camera> {
       _isUploading = true;
     });
 
-    // 各セッションごとにアップロード
+    // アップロード処理を並列で実行
+    List<Future<void>> uploadFutures = [];
+
     for (int sessionIndex = 0; sessionIndex < _traceSessions.length; sessionIndex++) {
       TraceSession session = _traceSessions[sessionIndex];
       for (int photoIndex = 0; photoIndex < session.photos.length; photoIndex++) {
         PhotoData data = session.photos[photoIndex];
-        if (data.uploadedFlag == 0) { // `animalType` の条件を削除
-          try {
-            // 画像をアップロード
-            String imageUrl = await _uploadImage(
-              data.image,
-              data.animalType,
-              data.position,
-              data.captureTime,
-            );
-
-            // Firebaseにデータを保存
-            await _saveToFirestore(
-              data.position,
-              imageUrl,
-              data.animalType,
-              data.memo,
-              data.elapsedForTrace,
-              data.traceType,
-              _selectedUserId,
-              data.confidence,
-              data.captureTime,
-            );
-
-            // uploadedFlagを1に更新
-            setState(() {
-              _traceSessions[sessionIndex].photos[photoIndex].uploadedFlag = 1;
-            });
-          } catch (e) {
-            print('アップロード中にエラーが発生しました: $e');
-            // エラー通知をユーザーに表示（オプション）
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('画像のアップロード中にエラーが発生しました。')),
-            );
-          }
+        if (data.uploadedFlag == 0) {
+          uploadFutures.add(_uploadSingleImage(sessionIndex, photoIndex, data));
         }
       }
     }
+
+    await Future.wait(uploadFutures);
 
     // セッションを保存
     await _saveTraceSessions(_traceSessions);
@@ -829,6 +780,43 @@ class _Local_CameraState extends State<Local_Camera> {
         );
       },
     );
+  }
+
+  // 個別の画像をアップロードする関数
+  Future<void> _uploadSingleImage(int sessionIndex, int photoIndex, PhotoData data) async {
+    try {
+      // 画像をアップロード
+      String imageUrl = await _uploadImage(
+        data.image,
+        data.animalType,
+        data.position,
+        data.captureTime,
+      );
+
+      // Firebaseにデータを保存
+      await _saveToFirestore(
+        data.position,
+        imageUrl,
+        data.animalType,
+        data.memo,
+        data.elapsedForTrace,
+        data.traceType,
+        _selectedUserId,
+        data.confidence,
+        data.captureTime,
+      );
+
+      // uploadedFlagを1に更新
+      setState(() {
+        _traceSessions[sessionIndex].photos[photoIndex].uploadedFlag = 1;
+      });
+    } catch (e) {
+      print('アップロード中にエラーが発生しました: $e');
+      // エラー通知をユーザーに表示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('画像のアップロード中にエラーが発生しました。')),
+      );
+    }
   }
 
   // ネットワーク接続を確認
@@ -875,7 +863,7 @@ class _Local_CameraState extends State<Local_Camera> {
     // メディアタイプをimage/jpegとして指定
     final metadata = SettableMetadata(contentType: 'image/jpeg');
 
-    // ファイルをアップロード
+    // ファイルをアップロード（オリジナルの解像度を保持）
     await ref.putFile(image, metadata);
 
     // 画像のダウンロードURLを取得
@@ -899,24 +887,69 @@ class _Local_CameraState extends State<Local_Camera> {
       desiredAccuracy: LocationAccuracy.high,
     );
   }
+}
 
-  // タイマーを開始
-  void _startTimer(DateTime startTime) {
-    _timer?.cancel(); // 既存のタイマーがあればキャンセル
-    _elapsed = Duration.zero;
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      setState(() {
-        _elapsed = DateTime.now().difference(startTime);
-      });
+// 以下に専用ウィジェット ElapsedTimeWidget を追加
+class ElapsedTimeWidget extends StatefulWidget {
+  final DateTime startTime;
+
+  ElapsedTimeWidget({required this.startTime});
+
+  @override
+  _ElapsedTimeWidgetState createState() => _ElapsedTimeWidgetState();
+}
+
+class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
+  Timer? _timer;
+  Duration _elapsed = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    // 初回更新を即時に行う
+    _updateElapsedTime();
+    // タイマーの更新間隔を毎分に設定
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+      _updateElapsedTime();
     });
   }
 
-  // タイマーを停止
-  void _stopTimer() {
+  @override
+  void dispose() {
     _timer?.cancel();
-    _timer = null;
+    super.dispose();
+  }
+
+  void _updateElapsedTime() {
     setState(() {
-      _elapsed = Duration.zero;
+      _elapsed = DateTime.now().difference(widget.startTime);
     });
+  }
+
+  String _formatDuration(Duration duration) {
+    int minutes = duration.inMinutes;
+    return '$minutes分経過';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Card(
+        color: Colors.white70,
+        elevation: 4.0,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            '調査開始から ${_formatDuration(_elapsed)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontFamily: "Noto Sans JP",
+              color: Colors.black,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

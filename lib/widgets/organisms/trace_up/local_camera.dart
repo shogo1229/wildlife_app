@@ -172,7 +172,7 @@ class _Local_CameraState extends State<Local_Camera> {
                         // アクティブなセッションの表示
                         if (activeSessions.isNotEmpty) ...[
                           Text(
-                            '現在アクティブなセッション',
+                            '現在のポイントで撮影したデータ',
                             style: TextStyle(
                               fontSize: 18.0,
                               fontWeight: FontWeight.bold,
@@ -196,7 +196,7 @@ class _Local_CameraState extends State<Local_Camera> {
                               children: [
                                 // 痕跡撮影枚数のカード
                                 Card(
-                                  color: Colors.white70,
+                                  color: Colors.white,
                                   elevation: 4.0,
                                   margin: EdgeInsets.symmetric(vertical: 8.0),
                                   child: Padding(
@@ -330,7 +330,7 @@ class _Local_CameraState extends State<Local_Camera> {
                         // 過去のセッションの表示
                         if (pastSessions.isNotEmpty) ...[
                           Text(
-                            '過去のセッション',
+                            '撮影済みデータ(アップロード前)',
                             style: TextStyle(
                               fontSize: 18.0,
                               fontWeight: FontWeight.bold,
@@ -357,7 +357,7 @@ class _Local_CameraState extends State<Local_Camera> {
                               children: [
                                 // 痕跡撮影枚数のカードとアイコンボタンを同じRowに配置
                                 Card(
-                                  color: Colors.white70,
+                                  color: Colors.white,
                                   elevation: 4.0,
                                   margin: EdgeInsets.symmetric(vertical: 8.0),
                                   child: Padding(
@@ -795,7 +795,7 @@ class _Local_CameraState extends State<Local_Camera> {
       builder: (context) {
         return AlertDialog(
           title: Text('トレーシング終了'),
-          content: Text('現在のトレーシングセッションを終了しました。'),
+          content: Text('現在のポイントでの痕跡収集を終了しました'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -1129,7 +1129,7 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Card(
-        color: Colors.white70,
+        color: Colors.white,
         elevation: 4.0,
         child: Padding(
           padding: const EdgeInsets.all(16.0),

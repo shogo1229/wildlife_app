@@ -90,11 +90,13 @@ class _Local_CameraState extends State<Local_Camera> {
         List<dynamic> jsonData = json.decode(content);
         sessions = jsonData
             .map((sessionJson) => TraceSession.fromJson(sessionJson))
+            .where((session) => session.photos.any((photo) => photo.uploadedFlag == 0)) // 投稿済みのセッションを除外
             .toList();
       }
     }
     return sessions;
   }
+
 
   // 痕跡種を日本語に変換
   String getTraceType(String traceType) {
@@ -1003,6 +1005,13 @@ class _Local_CameraState extends State<Local_Camera> {
       setState(() {
         _traceSessions[sessionIndex].photos[photoIndex].uploadedFlag = 1;
       });
+          // セッション内の全写真がアップロード済みなら、セッションを保存し、ローカルから表示を削除
+      if (_traceSessions[sessionIndex].photos.every((photo) => photo.uploadedFlag == 1)) {
+        await _saveTraceSessions(_traceSessions);
+        setState(() {
+          _traceSessions.removeAt(sessionIndex);
+        });
+      }
     } catch (e) {
       print('アップロード中にエラーが発生しました: $e');
       // エラー通知をユーザーに表示

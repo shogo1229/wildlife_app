@@ -878,12 +878,26 @@ class _Local_CameraState extends State<Local_Camera> {
     );
 
     if (deleteConfirmed == true) {
+      // ファイルシステムから画像を削除する処理を追加
+      File imageFile = _traceSessions[sessionIndex].photos[photoIndex].image;
+      if (await imageFile.exists()) {
+        try {
+          await imageFile.delete(); // 画像ファイルを削除
+          print("ローカル画像ファイルを削除しました: ${imageFile.path}");
+        } catch (e) {
+          print("画像削除中にエラーが発生しました: $e");
+        }
+      }
+
       setState(() {
         _traceSessions[sessionIndex].photos.removeAt(photoIndex);
       });
+
+      // 更新されたセッションを保存
       _saveTraceSessions(_traceSessions);
     }
   }
+
 
   // トレースセッションのアップロード
   Future<void> _uploadImages() async {

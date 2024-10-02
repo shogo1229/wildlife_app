@@ -234,7 +234,7 @@ class _Local_CameraState extends State<Local_Camera> {
                                             angle: -90 * 3.14159265359 / 180, // 90度をラジアンに変換して指定
                                             child: PieChart(
                                               PieChartData(
-                                                sections: _getSections(progress),
+                                                sections: _getSections(validTraceCount),
                                                 centerSpaceRadius: 20.0,
                                               ),
                                             ),
@@ -398,7 +398,7 @@ class _Local_CameraState extends State<Local_Camera> {
                                             angle: -90 * 3.14159265359 / 180, // ラジアンで回転角度を指定（-90度の場合）
                                             child: PieChart(
                                               PieChartData(
-                                                sections: _getSections(progress),
+                                                sections: _getSections(validTraceCount),
                                                 centerSpaceRadius: 20.0,
                                               ),
                                             ),
@@ -580,30 +580,31 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // チャートのセクションを生成
-  List<PieChartSectionData> _getSections(double progress) {
-    int filledSections = (progress * _maxCount).round();
+  List<PieChartSectionData> _getSections(int validTraceCount) {
     return List.generate(10, (index) {
-      if (index < filledSections && filledSections < 10) {
-        // 10個以下の撮影の場合
+      if (index < validTraceCount) {
+        // 有効な痕跡が10個以内なら濃い緑色で塗る
         return PieChartSectionData(
           color: Colors.green[400], // 濃い緑色
           radius: 30,
         );
-      } else if (index < 10) {
-        // 10個未満の撮影で未塗りの部分
+      } else if (validTraceCount > 10 && index < 10) {
+        // 10個を超える痕跡がある場合、超過分を赤色で表示
         return PieChartSectionData(
-          color: Colors.green[100], // 薄い緑色
+          color: Colors.red, // 赤色
           radius: 30,
         );
       } else {
-        // 11個以上の撮影の場合、超過部分を赤く表示
+        // 未塗りの部分は薄い緑色
         return PieChartSectionData(
-          color: Colors.red, // 赤色
+          color: Colors.green[100], // 薄い緑色
           radius: 30,
         );
       }
     });
   }
+
+
 
   // 写真を撮影
   Future<void> _takePicture() async {

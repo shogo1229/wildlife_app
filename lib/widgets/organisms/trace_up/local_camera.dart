@@ -1029,14 +1029,6 @@ class _Local_CameraState extends State<Local_Camera> {
 
       // 獣種に応じてポイントを加算
       await _updateAnimalPoints(_selectedUserId, data.animalType);
-      
-          // セッション内の全写真がアップロード済みなら、セッションを保存し、ローカルから表示を削除
-      if (_traceSessions[sessionIndex].photos.every((photo) => photo.uploadedFlag == 1)) {
-        await _saveTraceSessions(_traceSessions);
-        setState(() {
-          _traceSessions.removeAt(sessionIndex);
-        });
-      }
     } catch (e) {
       print('アップロード中にエラーが発生しました: $e');
       // エラー通知をユーザーに表示

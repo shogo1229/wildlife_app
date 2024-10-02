@@ -1026,6 +1026,10 @@ class _Local_CameraState extends State<Local_Camera> {
       setState(() {
         _traceSessions[sessionIndex].photos[photoIndex].uploadedFlag = 1;
       });
+
+      // 獣種に応じてポイントを加算
+      await _updateAnimalPoints(_selectedUserId, data.animalType);
+      
           // セッション内の全写真がアップロード済みなら、セッションを保存し、ローカルから表示を削除
       if (_traceSessions[sessionIndex].photos.every((photo) => photo.uploadedFlag == 1)) {
         await _saveTraceSessions(_traceSessions);
@@ -1071,6 +1075,35 @@ class _Local_CameraState extends State<Local_Camera> {
       'User_ID': selectedUserId,
       'Confidence': confidence,
     });
+  }
+
+  Future<void> _updateAnimalPoints(String userId, String animalType) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          '${animalType}_Point': FieldValue.increment(1),
+          'total_point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'start_flag_Point': 0,
+          'stop_flag_Point': 0,
+          'total_point': 0,
+        });
+      }
+    } catch (e) {
+      print('Error updating animal-specific points: $e');
+    }
   }
 
   // 画像をFirebase Storageにアップロード

@@ -230,10 +230,13 @@ class _Local_CameraState extends State<Local_Camera> {
                                         SizedBox(
                                           width: 105.0,
                                           height: 105.0,
-                                          child: PieChart(
-                                            PieChartData(
-                                              sections: _getSections(progress),
-                                              centerSpaceRadius: 20.0,
+                                          child: Transform.rotate(
+                                            angle: -90 * 3.14159265359 / 180, // 90度をラジアンに変換して指定
+                                            child: PieChart(
+                                              PieChartData(
+                                                sections: _getSections(progress),
+                                                centerSpaceRadius: 20.0,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -391,10 +394,13 @@ class _Local_CameraState extends State<Local_Camera> {
                                         SizedBox(
                                           width: 105.0,
                                           height: 105.0,
-                                          child: PieChart(
-                                            PieChartData(
-                                              sections: _getSections(progress),
-                                              centerSpaceRadius: 20.0,
+                                          child: Transform.rotate(
+                                            angle: -90 * 3.14159265359 / 180, // ラジアンで回転角度を指定（-90度の場合）
+                                            child: PieChart(
+                                              PieChartData(
+                                                sections: _getSections(progress),
+                                                centerSpaceRadius: 20.0,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -577,7 +583,7 @@ class _Local_CameraState extends State<Local_Camera> {
   List<PieChartSectionData> _getSections(double progress) {
     int filledSections = (progress * _maxCount).round();
     return List.generate(10, (index) {
-      if (index < filledSections && filledSections <= 10) {
+      if (index < filledSections && filledSections < 10) {
         // 10個以下の撮影の場合
         return PieChartSectionData(
           color: Colors.green[400], // 濃い緑色
@@ -760,8 +766,8 @@ class _Local_CameraState extends State<Local_Camera> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('トレーシング開始'),
-          content: Text('新しいトレーシングセッションを開始しました。'),
+          title: Text('痕跡収集開始'),
+          content: Text('痕跡収集を開始しました。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -796,7 +802,7 @@ class _Local_CameraState extends State<Local_Camera> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('トレーシング終了'),
+          title: Text('痕跡収集終了'),
           content: Text('現在のポイントでの痕跡収集を終了しました'),
           actions: [
             TextButton(
@@ -1110,8 +1116,8 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
     super.initState();
     // 初回更新を即時に行う
     _updateElapsedTime();
-    // タイマーの更新間隔を毎分に設定
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+    // タイマーの更新間隔を毎秒に設定
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       _updateElapsedTime();
     });
   }
@@ -1130,7 +1136,8 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
 
   String _formatDuration(Duration duration) {
     int minutes = duration.inMinutes;
-    return '$minutes分経過';
+    int seconds = duration.inSeconds % 60; // 秒を60で割った余りを取得
+    return '$minutes分${seconds.toString().padLeft(2, '0')}秒経過';
   }
 
   @override
@@ -1155,3 +1162,4 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
     );
   }
 }
+

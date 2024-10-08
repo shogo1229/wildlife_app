@@ -161,7 +161,7 @@ class _Local_CameraState extends State<Local_Camera> {
               child: (_traceSessions.isEmpty)
                   ? Center(
                       child: Text(
-                        '痕跡セッションが存在しません',
+                        '端末内のデータは投稿済みです',
                         style: TextStyle(
                           fontSize: 20.0,
                           color: Colors.black,

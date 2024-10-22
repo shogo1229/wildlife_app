@@ -626,8 +626,8 @@ class _Local_CameraState extends State<Local_Camera> {
         print('******画像の保存結果: $result******');
         if (result['isSuccess']) {
           Position position = await _getCurrentLocation();
-          await _showAnimalTypeMemoDialog(
-              newImage, position, captureTime, formattedTime); // 撮影時間とフォーマットされた時間を渡す
+          bool sessionStarted = _currentSession != null;
+          await _showAnimalTypeMemoDialog(newImage, position, captureTime, formattedTime, sessionStarted);
         } else {
           print('ローカルへの保存に失敗しました');
           ScaffoldMessenger.of(context).showSnackBar(
@@ -644,12 +644,11 @@ class _Local_CameraState extends State<Local_Camera> {
   }
 
   // メモダイアログを表示し、写真データを保存
-  Future<void> _showAnimalTypeMemoDialog(File image, Position position,
-      DateTime captureTime, String formattedTime) async {
+  Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime, String formattedTime, bool sessionStarted) async {
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: image);
+        return AnimalTypeMemoWizard(image: image, sessionStarted: sessionStarted);
       },
     );
 
@@ -812,11 +811,17 @@ class _Local_CameraState extends State<Local_Camera> {
   // セッション内の写真データを編集
   Future<void> _editPhotoData(
       int sessionIndex, int photoIndex, PhotoData originalData) async {
+    // 現在のセッション状態を取得
+    bool sessionStarted = _currentSession != null;
+
     // 編集用のダイアログを表示し、新しいデータを取得
     Map<String, dynamic>? result = await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AnimalTypeMemoWizard(image: originalData.image);
+        return AnimalTypeMemoWizard(
+          image: originalData.image,
+          sessionStarted: sessionStarted, // ここでパラメータを追加
+        );
       },
     );
 
@@ -843,6 +848,7 @@ class _Local_CameraState extends State<Local_Camera> {
       await _saveTraceSessions(_traceSessions);
     }
   }
+
 
   // 写真の削除確認
   Future<void> _confirmDelete(int sessionIndex, int photoIndex) async {

@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 
 class AnimalTypeMemoWizard extends StatefulWidget {
   final File image;
+  final bool sessionStarted; // 追加
 
-  AnimalTypeMemoWizard({required this.image});
+  AnimalTypeMemoWizard({required this.image, required this.sessionStarted}); // 修正
 
   @override
   _AnimalTypeMemoWizardState createState() => _AnimalTypeMemoWizardState();
@@ -120,16 +121,13 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildAnimalTypeButton(
-                'lib/assets/images/Boar.png', 'イノシシ', 'Boar'),
-            _buildAnimalTypeButton(
-                'lib/assets/images/Deer.png', 'ニホンジカ', 'Deer'),
+            _buildAnimalTypeButton('lib/assets/images/Boar.png', 'イノシシ', 'Boar', enabled: widget.sessionStarted),
+            _buildAnimalTypeButton('lib/assets/images/Deer.png', 'ニホンジカ', 'Deer', enabled: widget.sessionStarted),
           ],
         ),
         SizedBox(height: 20.0),
         Center(
-          child: _buildAnimalTypeButton(
-              'lib/assets/images/Other.png', 'その他/不明', 'Other'),
+          child: _buildAnimalTypeButton('lib/assets/images/Other.png', 'その他/不明', 'Other', enabled: widget.sessionStarted),
         ),
         SizedBox(height: 20.0),
         Divider(color: Colors.grey),
@@ -137,149 +135,181 @@ class _AnimalTypeMemoWizardState extends State<AnimalTypeMemoWizard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildStartButton(),
-            _buildStopButton(),
+            _buildStartButton(enabled: !widget.sessionStarted),
+            _buildStopButton(enabled: widget.sessionStarted),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildAnimalTypeButton(String imagePath, String label, String type) {
+
+  Widget _buildAnimalTypeButton(String imagePath, String label, String type, {bool enabled = true}) {
     return GestureDetector(
-      onTap: () => setState(() {
+      onTap: enabled ? () => setState(() {
         _animalType = type;
-      }),
-      child: Container(
-        width: 120.0,
-        height: 140.0,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _animalType == type ? Colors.green[800]! : Colors.grey,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(16.0),
-          color:
-              _animalType == type ? Colors.green[100] : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              imagePath,
-              width: 60.0,
-              height: 60.0,
-              fit: BoxFit.cover,
+      }) : null,
+      child: Stack(
+        children: [
+          Container(
+            width: 120.0,
+            height: 140.0,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _animalType == type ? Colors.green[800]! : Colors.grey,
+                width: 2.0,
+              ),
+              borderRadius: BorderRadius.circular(16.0),
+              color: _animalType == type ? Colors.green[100] : Colors.transparent,
             ),
-            SizedBox(height: 8.0),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-                color:
-                    _animalType == type ? Colors.green[800] : Colors.black,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 60.0,
+                  height: 60.0,
+                  fit: BoxFit.cover,
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: _animalType == type ? Colors.green[800] : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!enabled)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Center(
+                  child: Icon(Icons.block, color: Colors.redAccent, size: 40),
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildStartButton() {
+  Widget _buildStartButton({bool enabled = true}) {
     return GestureDetector(
-      onTap: () => setState(() {
+      onTap: enabled ? () => setState(() {
         _animalType = 'start_flag';
         _nextStep();
-      }),
-      child: Container(
-        width: 120.0,
-        height: 140.0,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _animalType == 'start_flag'
-                ? Colors.green[800]!
-                : Colors.grey,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(16.0),
-          color: _animalType == 'start_flag'
-              ? Colors.green[100]
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.access_time,
-              size: 60.0,
-              color: _animalType == 'start_flag'
-                  ? Colors.green[800]
-                  : Colors.green,
+      }) : null,
+      child: Stack(
+        children: [
+          Container(
+            width: 120.0,
+            height: 140.0,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _animalType == 'start_flag' ? Colors.green[800]! : Colors.grey,
+                width: 2.0,
+              ),
+              borderRadius: BorderRadius.circular(16.0),
+              color: _animalType == 'start_flag' ? Colors.green[100] : Colors.transparent,
             ),
-            SizedBox(height: 8.0),
-            Text(
-              '調査開始',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: _animalType == 'start_flag'
-                    ? Colors.green[800]
-                    : Colors.green,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 60.0,
+                  color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  '調査開始',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: _animalType == 'start_flag' ? Colors.green[800] : Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!enabled)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Center(
+                  child: Icon(Icons.block, color: Colors.redAccent, size: 40),
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildStopButton() {
+  Widget _buildStopButton({bool enabled = true}) {
     return GestureDetector(
-      onTap: () => setState(() {
+      onTap: enabled ? () => setState(() {
         _animalType = 'stop_flag';
         _nextStep();
-      }),
-      child: Container(
-        width: 120.0,
-        height: 140.0,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: _animalType == 'stop_flag'
-                ? Colors.green[800]!
-                : Colors.grey,
-            width: 2.0,
-          ),
-          borderRadius: BorderRadius.circular(16.0),
-          color: _animalType == 'stop_flag'
-              ? Colors.green[100]
-              : Colors.transparent,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.stop_circle,
-              size: 60.0,
-              color: _animalType == 'stop_flag'
-                  ? Colors.green[800]
-                  : Colors.red,
+      }) : null,
+      child: Stack(
+        children: [
+          Container(
+            width: 120.0,
+            height: 140.0,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: _animalType == 'stop_flag' ? Colors.green[800]! : Colors.grey,
+                width: 2.0,
+              ),
+              borderRadius: BorderRadius.circular(16.0),
+              color: _animalType == 'stop_flag' ? Colors.green[100] : Colors.transparent,
             ),
-            SizedBox(height: 8.0),
-            Text(
-              '調査終了',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: _animalType == 'stop_flag'
-                    ? Colors.green[800]
-                    : Colors.red,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.stop_circle,
+                  size: 60.0,
+                  color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+                ),
+                SizedBox(height: 8.0),
+                Text(
+                  '調査終了',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: _animalType == 'stop_flag' ? Colors.green[800] : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!enabled)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(16.0),
+                ),
+                child: Center(
+                  child: Icon(Icons.block, color: Colors.redAccent, size: 40),
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
+
 
   Widget _buildTraceTypeSelection() {
     return Column(

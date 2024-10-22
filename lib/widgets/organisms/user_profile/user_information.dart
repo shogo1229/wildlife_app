@@ -37,7 +37,7 @@ class _UserInformationMenusState extends State<UserInformationMenus> {
   Future<void> _loadUploadedSessions() async {
     List<TraceSession> sessions = await _loadTraceSessions();
     setState(() {
-      // 投稿済みの痕跡を含むセッションのみを表示
+      // 投稿済みのセッションを全て表示
       _uploadedSessions = sessions
           .where((session) =>
               session.photos.any((photo) => photo.uploadedFlag == 1))
@@ -56,7 +56,7 @@ class _UserInformationMenusState extends State<UserInformationMenus> {
         List<dynamic> jsonData = json.decode(content);
         sessions = jsonData
             .map((sessionJson) => TraceSession.fromJson(sessionJson))
-            .toList();
+            .toList(); // フィルタリングを削除して全てのセッションを読み込む
       }
     }
     return sessions;
@@ -129,7 +129,8 @@ class _UserInformationMenusState extends State<UserInformationMenus> {
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
+                  if (!snapshot.hasData ||
+                      snapshot.data?.docs.isEmpty == true) {
                     return Center(
                       child: Text('User not found'),
                     );
@@ -153,7 +154,8 @@ class _UserInformationMenusState extends State<UserInformationMenus> {
                             ),
                           ),
                           SizedBox(height: 8),
-                          _buildUserNameCard(context, userDocument['User_Name']),
+                          _buildUserNameCard(
+                              context, userDocument['User_Name']),
                           SizedBox(height: 16),
                           PointsDisplay(userDocument: userDocument), // 新しいウィジェットを使用
                           SizedBox(height: 24),

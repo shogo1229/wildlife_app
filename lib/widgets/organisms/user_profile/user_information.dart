@@ -4,6 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:wildlife_app/main.dart';
 import 'package:wildlife_app/widgets/molecules/user_profile/footer.dart';
+import 'package:wildlife_app/widgets/organisms/user_profile/points_display.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart'; // 追加
+import 'package:wildlife_app/widgets/organisms/trace_up/trace_session.dart';
+import 'package:wildlife_app/widgets/organisms/trace_up/photo_data.dart';
 
 class UserInformationMenu extends StatelessWidget {
   @override
@@ -14,7 +20,86 @@ class UserInformationMenu extends StatelessWidget {
   }
 }
 
-class UserInformationMenus extends StatelessWidget {
+class UserInformationMenus extends StatefulWidget {
+  @override
+  _UserInformationMenusState createState() => _UserInformationMenusState();
+}
+
+class _UserInformationMenusState extends State<UserInformationMenus> {
+  List<TraceSession> _uploadedSessions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUploadedSessions();
+  }
+
+  Future<void> _loadUploadedSessions() async {
+    List<TraceSession> sessions = await _loadTraceSessions();
+    setState(() {
+      // 投稿済みの痕跡を含むセッションのみを表示
+      _uploadedSessions = sessions
+          .where((session) =>
+              session.photos.any((photo) => photo.uploadedFlag == 1))
+          .toList();
+    });
+  }
+
+  Future<List<TraceSession>> _loadTraceSessions() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final filePath = '${directory.path}/trace_sessions.txt';
+    final file = File(filePath);
+    List<TraceSession> sessions = [];
+    if (await file.exists()) {
+      final content = await file.readAsString();
+      if (content.isNotEmpty) {
+        List<dynamic> jsonData = json.decode(content);
+        sessions = jsonData
+            .map((sessionJson) => TraceSession.fromJson(sessionJson))
+            .toList();
+      }
+    }
+    return sessions;
+  }
+
+  String getTraceType(String traceType) {
+    switch (traceType) {
+      case 'trace_footprint':
+        return '足跡';
+      case 'trace_dropping':
+        return '糞';
+      case 'trace_swamp':
+        return 'ぬた場';
+      case 'trace_mudscrub':
+        return '泥こすり痕';
+      case 'trace_hornscrub':
+        return '角/牙 擦り痕';
+      case 'trace_others':
+        return 'その他';
+      case 'camera':
+        return 'カメラ';
+      default:
+        return 'Unknown'; // 不明な痕跡種
+    }
+  }
+
+  String getAnimalType(String animalType) {
+    switch (animalType) {
+      case 'Boar':
+        return 'イノシシ';
+      case 'Deer':
+        return 'シカ';
+      case 'Other':
+        return 'その他/不明';
+      case 'start_flag':
+        return '調査開始';
+      case 'stop_flag':
+        return '調査終了';
+      default:
+        return 'error'; // 不明な動物種
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     User? user = Provider.of<UserProvider>(context).getUser();
@@ -59,12 +144,20 @@ class UserInformationMenus extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
+                          // カードの上にお名前を表示
+                          Text(
+                            'お名前',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontFamily: "Noto Sans JP",
+                            ),
+                          ),
+                          SizedBox(height: 8),
                           _buildUserNameCard(context, userDocument['User_Name']),
                           SizedBox(height: 16),
-                          _buildTotalPointCard('痕跡発見数(全体)', userDocument['total_point']),
-                          _buildInfoCard('痕跡発見数(イノシシ)', userDocument['Boar_Point']),
-                          _buildInfoCard('痕跡発見数(ニホンジカ)', userDocument['Deer_Point']),
-                          _buildInfoCard('痕跡発見数(その他/不明)', userDocument['Other_Point']),
+                          PointsDisplay(userDocument: userDocument), // 新しいウィジェットを使用
+                          SizedBox(height: 24),
+                          _buildUploadedTracesSection(),
                         ],
                       ),
                     ),
@@ -78,19 +171,73 @@ class UserInformationMenus extends StatelessWidget {
     );
   }
 
+  Widget _buildUploadedTracesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '投稿済みの痕跡一覧',
+          style: TextStyle(
+            fontSize: 22,
+            fontFamily: "Noto Sans JP",
+          ),
+        ),
+        SizedBox(height: 16),
+        _uploadedSessions.isEmpty
+            ? Text('投稿済みの痕跡がありません')
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: _uploadedSessions.length,
+                itemBuilder: (context, sessionIndex) {
+                  final session = _uploadedSessions[sessionIndex];
+                  return Card(
+                    color: Colors.white,
+                    elevation: 4.0,
+                    margin:
+                        EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    child: Column(
+                      children: [
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: NeverScrollableScrollPhysics(),
+                          itemCount: session.photos.length,
+                          itemBuilder: (context, photoIndex) {
+                            final photo = session.photos[photoIndex];
+                            if (photo.uploadedFlag == 1) {
+                              return ListTile(
+                                leading: Image.file(
+                                  photo.image,
+                                  width: 50.0,
+                                  height: 50.0,
+                                  fit: BoxFit.cover,
+                                ),
+                                title: Text(
+                                    '獣種: ${getAnimalType(photo.animalType)}'),
+                                subtitle: Text(
+                                    '痕跡種: ${getTraceType(photo.traceType)}'),
+                                trailing: Text('投稿済み'),
+                              );
+                            } else {
+                              return Container(); // 未投稿の痕跡は表示しない
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+      ],
+    );
+  }
+
   Widget _buildUserNameCard(BuildContext context, String userName) {
     return Card(
       elevation: 5,
       margin: EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         title: Text(
-          'お名前',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(
           userName,
           style: TextStyle(
             fontSize: 24,
@@ -148,82 +295,5 @@ class UserInformationMenus extends StatelessWidget {
           .doc(user.uid)
           .update({'User_Name': newName});
     }
-  }
-
-  Widget _buildTotalPointCard(String title, dynamic value) {
-    return Card(
-      elevation: 5,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: Icon(Icons.stars, color: Colors.orange), // アイコンはそのまま
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Text(
-          value.toString(),
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.green[800],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String title, dynamic value) {
-    return Card(
-      elevation: 5,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      child: ListTile(
-        leading: _getImageForTitle(title), // タイトルに基づいた画像を表示
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Text(
-          value.toString(),
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.green[800],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _getImageForTitle(String title) {
-    switch (title) {
-      case '痕跡発見数(イノシシ)':
-        return Image.asset('lib/assets/images/Boar_pin_Normal.png', width: 40, height: 40);
-      case '痕跡発見数(ニホンジカ)':
-        return Image.asset('lib/assets/images/Deer_pin_Normal.png', width: 40, height: 40);
-      case '痕跡発見数(その他/不明)':
-        return Image.asset('lib/assets/images/Other_pin_Normal.png', width: 40, height: 40);
-      default:
-        return Image.asset('lib/assets/images/Other_pin_Normal.png', width: 40, height: 40);
-    }
-  }
-}
-
-class UserProfile extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        Expanded(
-          flex: 8,
-          child: UserInformationMenus(),
-        ),
-        UserProfileFooter(),
-      ],
-    );
   }
 }

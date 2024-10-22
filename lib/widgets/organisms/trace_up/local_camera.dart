@@ -164,7 +164,7 @@ class _Local_CameraState extends State<Local_Camera> {
                   child: (_traceSessions.isEmpty)
                       ? Center(
                           child: Text(
-                            '痕跡セッションが存在しません',
+                            '端末内のデータは投稿済みです',
                             style: TextStyle(
                               fontSize: 20.0,
                               color: Colors.black,
@@ -235,12 +235,15 @@ class _Local_CameraState extends State<Local_Camera> {
                                             SizedBox(
                                               width: 105.0,
                                               height: 105.0,
-                                              child: PieChart(
-                                                PieChartData(
-                                                  sections:
-                                                      _getSections(progress),
-                                                  centerSpaceRadius: 20.0,
-                                                ),
+                                              child: Transform.rotate(
+                                            angle: -90 * 3.14159265359 / 180, // 90度をラジアンに変換して指定
+                                            child: PieChart(
+                                                  PieChartData(
+                                                    sections:
+                                                      _getSections(validTraceCount),
+                                                    centerSpaceRadius: 20.0,
+                                                  ),
+                                            ),
                                               ),
                                             ),
                                           ],
@@ -409,12 +412,15 @@ class _Local_CameraState extends State<Local_Camera> {
                                             SizedBox(
                                               width: 105.0,
                                               height: 105.0,
-                                              child: PieChart(
-                                                PieChartData(
-                                                  sections:
-                                                      _getSections(progress),
-                                                  centerSpaceRadius: 20.0,
-                                                ),
+                                              child: Transform.rotate(
+                                            angle: -90 * 3.14159265359 / 180, // ラジアンで回転角度を指定（-90度の場合）
+                                            child: PieChart(
+                                                  PieChartData(
+                                                    sections:
+                                                      _getSections(validTraceCount),
+                                                    centerSpaceRadius: 20.0,
+                                                  ),
+                                            ),
                                               ),
                                             ),
                                             // 展開・折りたたみアイコン
@@ -621,30 +627,31 @@ class _Local_CameraState extends State<Local_Camera> {
 
 
   // チャートのセクションを生成
-  List<PieChartSectionData> _getSections(double progress) {
-    int filledSections = (progress * _maxCount).round();
+  List<PieChartSectionData> _getSections(int validTraceCount) {
     return List.generate(10, (index) {
-      if (index < filledSections && filledSections <= 10) {
-        // 10個以下の撮影の場合
+      if (index < validTraceCount) {
+        // 有効な痕跡が10個以内なら濃い緑色で塗る
         return PieChartSectionData(
           color: Colors.green[400], // 濃い緑色
           radius: 30,
         );
-      } else if (index < 10) {
-        // 10個未満の撮影で未塗りの部分
+      } else if (validTraceCount > 10 && index < 10) {
+        // 10個を超える痕跡がある場合、超過分を赤色で表示
         return PieChartSectionData(
-          color: Colors.green[100], // 薄い緑色
+          color: Colors.red, // 赤色
           radius: 30,
         );
       } else {
-        // 11個以上の撮影の場合、超過部分を赤く表示
+        // 未塗りの部分は薄い緑色
         return PieChartSectionData(
-          color: Colors.red, // 赤色
+          color: Colors.green[100], // 薄い緑色
           radius: 30,
         );
       }
     });
   }
+
+
 
   // 写真を撮影
   Future<void> _takePicture() async {
@@ -814,8 +821,8 @@ class _Local_CameraState extends State<Local_Camera> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('トレーシング開始'),
-          content: Text('新しいトレーシングセッションを開始しました。'),
+          title: Text('痕跡収集開始'),
+          content: Text('痕跡収集を開始しました。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -850,7 +857,7 @@ class _Local_CameraState extends State<Local_Camera> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('トレーシング終了'),
+          title: Text('痕跡収集終了'),
           content: Text('現在のポイントでの痕跡収集を終了しました'),
           actions: [
             TextButton(
@@ -932,12 +939,26 @@ class _Local_CameraState extends State<Local_Camera> {
     );
 
     if (deleteConfirmed == true) {
+      // ファイルシステムから画像を削除する処理を追加
+      File imageFile = _traceSessions[sessionIndex].photos[photoIndex].image;
+      if (await imageFile.exists()) {
+        try {
+          await imageFile.delete(); // 画像ファイルを削除
+          print("ローカル画像ファイルを削除しました: ${imageFile.path}");
+        } catch (e) {
+          print("画像削除中にエラーが発生しました: $e");
+        }
+      }
+
       setState(() {
         _traceSessions[sessionIndex].photos.removeAt(photoIndex);
       });
+
+      // 更新されたセッションを保存
       _saveTraceSessions(_traceSessions);
     }
   }
+
 
   // トレースセッションのアップロード
   Future<void> _uploadImages() async {
@@ -1066,13 +1087,15 @@ class _Local_CameraState extends State<Local_Camera> {
       setState(() {
         _traceSessions[sessionIndex].photos[photoIndex].uploadedFlag = 1;
       });
-          // セッション内の全写真がアップロード済みなら、セッションを保存し、ローカルから表示を削除
+
+      // 獣種に応じてポイントを加算
+      await _updateAnimalPoints(_selectedUserId, data.animalType);
+      
+      // セッション内の全写真がアップロード済みなら、セッションを非表示にするが、traces_sessions.txtには保持
       if (_traceSessions[sessionIndex].photos.every((photo) => photo.uploadedFlag == 1)) {
-        await _saveTraceSessions(_traceSessions);
-        setState(() {
-          _traceSessions.removeAt(sessionIndex);
-        });
+        await _saveTraceSessions(_traceSessions); // traces_sessions.txtには保存
       }
+
     } catch (e) {
       print('アップロード中にエラーが発生しました: $e');
       // エラー通知をユーザーに表示
@@ -1111,6 +1134,35 @@ class _Local_CameraState extends State<Local_Camera> {
       'User_ID': selectedUserId,
       'Confidence': confidence,
     });
+  }
+
+  Future<void> _updateAnimalPoints(String userId, String animalType) async {
+    try {
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('User_Information')
+          .where('User_ID', isEqualTo: userId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        var doc = querySnapshot.docs[0];
+        await doc.reference.update({
+          '${animalType}_Point': FieldValue.increment(1),
+          'total_point': FieldValue.increment(1),
+        });
+      } else {
+        await FirebaseFirestore.instance.collection('User_Information').add({
+          'User_ID': userId,
+          'Boar_Point': 0,
+          'Deer_Point': 0,
+          'Other_Point': 0,
+          'start_flag_Point': 0,
+          'stop_flag_Point': 0,
+          'total_point': 0,
+        });
+      }
+    } catch (e) {
+      print('Error updating animal-specific points: $e');
+    }
   }
 
   // 画像をFirebase Storageにアップロード
@@ -1171,8 +1223,8 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
     super.initState();
     // 初回更新を即時に行う
     _updateElapsedTime();
-    // タイマーの更新間隔を毎分に設定
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+    // タイマーの更新間隔を毎秒に設定
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       _updateElapsedTime();
     });
   }
@@ -1191,7 +1243,8 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
 
   String _formatDuration(Duration duration) {
     int minutes = duration.inMinutes;
-    return '$minutes分経過';
+    int seconds = duration.inSeconds % 60; // 秒を60で割った余りを取得
+    return '$minutes分${seconds.toString().padLeft(2, '0')}秒経過';
   }
 
   @override
@@ -1216,3 +1269,4 @@ class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
     );
   }
 }
+

@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyAZkgLFu7dTdp7EfBtFirwk1pvPnipwdHU</string>
+	<string>AIzaSyALDmgZYSNKTffGxCdC1nAU1XXq9unOld4</string>
 	<key>GCM_SENDER_ID</key>
-	<string>12350762234</string>
+	<string>364333860786</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.wildlifeApp.RunnerTests</string>
+	<string>com.example.wildlifeApp</string>
 	<key>PROJECT_ID</key>
-	<string>wildlife-app-a0aa1</string>
+	<string>wildlife-app-f67c3</string>
 	<key>STORAGE_BUCKET</key>
-	<string>wildlife-app-a0aa1.appspot.com</string>
+	<string>wildlife-app-f67c3.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:12350762234:ios:87e250b6315faa33b7ad43</string>
+	<string>1:364333860786:ios:e70a8f93a42e4b795dc6ab</string>
 </dict>
 </plist>

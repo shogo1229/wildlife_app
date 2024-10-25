@@ -18,6 +18,8 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart'; // 追加
 import 'package:permission_handler/permission_handler.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:async'; // タイムアウトのために追加
+
 
 class Local_Camera extends StatefulWidget {
   @override
@@ -658,7 +660,7 @@ class _Local_CameraState extends State<Local_Camera> {
     final imageFile = await _picker.pickImage(source: ImageSource.camera);
     if (imageFile != null) {
       setState(() {
-      _isProcessing = true; // プログレスインジケータを表示
+        _isProcessing = true; // プログレスインジケータを表示
       });
       final DateTime captureTime = DateTime.now();
 
@@ -682,7 +684,16 @@ class _Local_CameraState extends State<Local_Camera> {
             Uint8List.fromList(bytes), name: formattedTime);
         print('******画像の保存結果: $result******');
         if (result['isSuccess']) {
-          Position position = await _getCurrentLocation();
+          Position position;
+          try {
+            position = await _getCurrentLocation();
+          } catch (e) {
+            print('位置情報の取得に失敗しました: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('位置情報の取得に失敗しました')),
+            );
+            return;
+          }
           bool sessionStarted = _currentSession != null;
           await _showAnimalTypeMemoDialog(newImage, position, captureTime, formattedTime, sessionStarted);
         } else {
@@ -696,14 +707,14 @@ class _Local_CameraState extends State<Local_Camera> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('画像処理中にエラーが発生しました')),
         );
+      } finally {
+        setState(() {
+          _isProcessing = false; // プログレスインジケータを非表示
+        });
       }
-      finally {
-      setState(() {
-        _isProcessing = false; // プログレスインジケータを非表示
-      });
-    }
     }
   }
+
 
   // メモダイアログを表示し、写真データを保存
   Future<void> _showAnimalTypeMemoDialog(File image, Position position, DateTime captureTime, String formattedTime, bool sessionStarted) async {
@@ -1184,8 +1195,9 @@ class _Local_CameraState extends State<Local_Camera> {
     // 画像のダウンロードURLを取得
     return await ref.getDownloadURL();
   }
+  
 
-  // 現在の位置を取得
+// 現在の位置を取得
   Future<Position> _getCurrentLocation() async {
     // 位置情報の許可を確認
     LocationPermission permission = await Geolocator.checkPermission();
@@ -1198,9 +1210,100 @@ class _Local_CameraState extends State<Local_Camera> {
       }
     }
 
-    return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+    Position? position;
+
+    // 高精度で45秒間位置情報を取得
+    try {
+      position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 45),
+      );
+      print('高精度の位置情報を取得しました: $position');
+    } on TimeoutException catch (e) {
+      print('高精度の位置情報取得が45秒でタイムアウトしました: $e');
+    } catch (e) {
+      print('高精度の位置情報取得中にエラーが発生しました: $e');
+    }
+
+    if (position == null) {
+      // 精度を下げて20秒間位置情報を取得
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: Duration(seconds: 20),
+        );
+        print('低精度の位置情報を取得しました: $position');
+      } on TimeoutException catch (e) {
+        print('低精度の位置情報取得が20秒でタイムアウトしました: $e');
+      } catch (e) {
+        print('低精度の位置情報取得中にエラーが発生しました: $e');
+      }
+    }
+
+    if (position == null) {
+      // 位置情報が取得できなかった場合、数値入力画面を表示
+      position = await _getManualLocationInput();
+    }
+
+    if (position == null) {
+      // それでも位置情報が取得できなかった場合、エラーをスロー
+      throw Exception('位置情報が取得できませんでした。');
+    }
+
+    return position;
+  }
+
+  Future<Position?> _getManualLocationInput() async {
+    double? latitude;
+    double? longitude;
+
+    Map<String, double>? result = await showDialog<Map<String, double>>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'トレイルカメラの\n',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+                TextSpan(
+                  text: '番号入力',
+                  style: TextStyle(color: Colors.black, fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+          content: ManualLocationInputDialog(),
+        );
+      },
     );
+
+    if (result != null) {
+      latitude = result['latitude'];
+      longitude = result['longitude'];
+    }
+
+    if (latitude != null && longitude != null) {
+      return Position(
+        latitude: latitude,
+        longitude: longitude,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        altitudeAccuracy: 0,
+        headingAccuracy: 0,
+        floor: null,
+        isMocked: false,
+      );
+    } else {
+      return null;
+    }
   }
 }
 
@@ -1213,6 +1316,87 @@ class ElapsedTimeWidget extends StatefulWidget {
   @override
   _ElapsedTimeWidgetState createState() => _ElapsedTimeWidgetState();
 }
+
+// _Local_CameraStateクラスの外部に新しいウィジェットを追加
+class ManualLocationInputDialog extends StatefulWidget {
+  @override
+  _ManualLocationInputDialogState createState() => _ManualLocationInputDialogState();
+}
+
+class _ManualLocationInputDialogState extends State<ManualLocationInputDialog> {
+  final TextEditingController _cameraNumberController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      String cameraNumber = _cameraNumberController.text;
+      double? parsedNumber = double.tryParse(cameraNumber);
+      if (parsedNumber != null) {
+        Navigator.of(context).pop({'latitude': parsedNumber, 'longitude': parsedNumber});
+      } else {
+        // 無効な数値の場合はエラーメッセージを表示
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('有効な数値を入力してください')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView( // Prevent overflow when keyboard is shown
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // Prevent overflow
+          children: [
+            Card(
+              margin: EdgeInsets.all(16),
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'カメラ前以外を調査している場合は「0」を入力してください',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 12),
+                    TextFormField(
+                      controller: _cameraNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'カメラ番号',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.numberWithOptions(decimal: true),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'カメラ前以外を調査している場合は「0」を入力してください';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return '数値を入力してください';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 100, width: double.infinity),
+            ElevatedButton(
+              onPressed: _submit,
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+}
+
+
 
 class _ElapsedTimeWidgetState extends State<ElapsedTimeWidget> {
   Timer? _timer;
